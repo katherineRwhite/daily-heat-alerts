@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canada Daily Heat Alerts</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fdf8f3;
+    --surface: #fff;
+    --border: #e8ddd2;
+    --text: #1a1410;
+    --muted: #9a8878;
+    --accent: #c94a1a;
+    --accent-light: #fff0ea;
+    --accent-mid: #fde0d0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 2px solid var(--text);
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .flame {
+    font-size: 1.6rem;
+    line-height: 1;
+  }
+
+  .logo-text h1 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .logo-text p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border: 1.5px solid var(--text);
+    padding: 8px 16px;
+    transition: all 0.15s;
+    background: none;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  button:hover { background: var(--text); color: var(--bg); }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  button.primary:hover { background: #a83a10; border-color: #a83a10; }
+  button.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.secondary:hover { background: var(--text); color: var(--bg); }
+
+  #refreshBtn.spinning svg { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Status row ── */
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .status-row .date-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .count-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid var(--accent-mid);
+    padding: 4px 12px;
+  }
+
+  /* ── Error banner ── */
+  .error-banner {
+    background: #fff5f5;
+    border: 1.5px solid #f5a0a0;
+    color: #b03030;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    display: none;
+  }
+
+  /* ── Table ── */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1.5px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  thead {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--accent-light); }
+
+  td {
+    padding: 11px 14px;
+    vertical-align: top;
+    line-height: 1.4;
+  }
+
+  td.mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  td.alert-type {
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  td.desc {
+    color: #4a3a30;
+    font-size: 0.78rem;
+    max-width: 300px;
+  }
+
+  /* ── Empty / loading state ── */
+  .state-msg {
+    padding: 60px 20px;
+    text-align: center;
+    border: 1.5px dashed var(--border);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  .state-msg .icon { font-size: 2rem; display: block; margin-bottom: 12px; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    line-height: 2;
+  }
+
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">
+      <div class="flame">🌡️</div>
+      <div class="logo-text">
+        <h1>Canada Daily Heat Alerts</h1>
+        <p>Source: Environment &amp; Climate Change Canada · GeoMet API</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="downloadBtn" class="secondary" onclick="downloadCSV()" disabled>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download CSV
+      </button>
+      <button id="refreshBtn" class="primary" onclick="loadAlerts()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div class="status-row">
+    <span class="date-label" id="dateLabel">—</span>
+    <span class="count-badge" id="countBadge" style="display:none"></span>
+  </div>
+
+  <div id="errorBanner" class="error-banner"></div>
+
+  <div id="main">
+    <div class="state-msg">
+      <span class="icon">⏳</span>
+      Loading heat alerts…
+    </div>
+  </div>
+
+  <footer>
+    Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
+    Filters to today's active heat, humidex, and heat-related alerts only.<br>
+    Refresh any time to get the latest data. Download saves a CSV of the current view.
+  </footer>
+
+</div>
+<script>
+  let heatAlerts = [];
+
+  const TODAY = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+
+  const HEAT_PATTERN = /heat|humidex|canicule|chaleur|hot|warming/i;
+
+  function isToday(dateStr) {
+    if (!dateStr) return true; // include if no date
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-CA') === TODAY;
+    } catch { return false; }
+  }
+
+  function stripHtml(s) {
+    return (s || '').replace(/<[^>]+>/g, '').trim();
+  }
+
+  function fmtTime(s) {
+    if (!s) return '—';
+    try {
+      return new Date(s).toLocaleString('en-CA', {
+        month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+        timeZoneName: 'short'
+      });
+    } catch { return s; }
+  }
+
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  async function loadAlerts() {
+    const btn = document.getElementById('refreshBtn');
+    btn.classList.add('spinning');
+    btn.disabled = true;
+    hideError();
+    document.getElementById('countBadge').style.display = 'none';
+    document.getElementById('main').innerHTML =
+      `<div class="state-msg"><span class="icon">⏳</span>Fetching heat alerts…</div>`;
+
+    try {
+      const url = 'https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const today = new Date().toLocaleDateString('en-CA', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+      document.getElementById('dateLabel').textContent = today;
+
+      heatAlerts = (data.features || [])
+        .map(f => {
+          const p = f.properties || {};
+          return {
+            alert_type:  p.alert_name_en  || '',
+            community:   p.feature_name_en || '—',
+            province:    p.province        || '—',
+            status:      p.status_en       || '',
+            issued:      p.publication_datetime || '',
+            expires:     p.expiration_datetime  || '',
+            description: stripHtml((p.alert_text_en || '').slice(0, 500)),
+          };
+        })
+        .filter(a => HEAT_PATTERN.test(a.alert_type));
+        // Note: GeoMet only returns currently-active alerts, so all results are current.
+        // If you want strict "issued today" filtering, swap the comment below:
+        // .filter(a => HEAT_PATTERN.test(a.alert_type) && isToday(a.issued));
+
+      renderTable();
+
+      const badge = document.getElementById('countBadge');
+      badge.textContent = heatAlerts.length + ' alert' + (heatAlerts.length !== 1 ? 's' : '');
+      badge.style.display = '';
+
+      document.getElementById('downloadBtn').disabled = heatAlerts.length === 0;
+
+    } catch (err) {
+      showError(
+        'Could not load data: ' + err.message + '\n' +
+        'If running locally from a file://, CORS will block the request. ' +
+        'Host via GitHub Pages or run: python3 -m http.server 8080'
+      );
+      document.getElementById('main').innerHTML =
+        `<div class="state-msg"><span class="icon">⚠️</span>Failed to load. See error above.</div>`;
+    } finally {
+      btn.classList.remove('spinning');
+      btn.disabled = false;
+    }
+  }
+
+  function renderTable() {
+    const container = document.getElementById('main');
+
+    if (heatAlerts.length === 0) {
+      container.innerHTML =
+        `<div class="state-msg"><span class="icon">✅</span>No active heat alerts in Canada today.</div>`;
+      return;
+    }
+
+    const rows = heatAlerts.map(a => `
+      <tr>
+        <td class="alert-type">${esc(a.alert_type)}</td>
+        <td>${esc(a.community)}</td>
+        <td class="mono">${esc(a.province)}</td>
+        <td class="mono">${fmtTime(a.issued)}</td>
+        <td class="mono">${fmtTime(a.expires)}</td>
+        <td class="desc">${esc(a.description)}</td>
+      </tr>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Alert Type</th>
+              <th>Community / Area</th>
+              <th>Province</th>
+              <th>Issued</th>
+              <th>Expires</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function downloadCSV() {
+    if (heatAlerts.length === 0) return;
+
+    const headers = ['date','alert_type','community','province','status','issued','expires','description'];
+    const today = new Date().toLocaleDateString('en-CA');
+
+    const csvRows = [
+      headers.join(','),
+      ...heatAlerts.map(a => headers.map(h => {
+        const val = h === 'date' ? today : (a[h] || '');
+        // Escape CSV: wrap in quotes if contains comma, newline, or quote
+        const escaped = String(val).replace(/"/g, '""');
+        return /[,\n"]/.test(escaped) ? `"${escaped}"` : escaped;
+      }).join(','))
+    ];
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `heat_alerts_${today}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorBanner');
+    el.textContent = '⚠ ' + msg;
+    el.style.display = 'block';
+  }
+
+  function hideError() {
+    document.getElementById('errorBanner').style.display = 'none';
+  }
+
+  loadAlerts();
+</script>
+</body>
+</html>
