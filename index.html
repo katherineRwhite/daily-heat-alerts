@@ -242,7 +242,7 @@
   <footer>
     Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
     Archived daily by GitHub Actions · Falls back to live GeoMet API if archive unavailable<br>
-    Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert
+    Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory
   </footer>
 
 </div>
@@ -476,7 +476,7 @@
 
     const provTags = provinces.map(p => `<span class="prov-tag">${esc(p)}</span>`).join('');
     document.getElementById('summaryProvinces').innerHTML =
-      `<span class="summary-prov-label">Provinces / territories affected:</span>${provTags}`;
+      `<span class="summary-prov-label">PT affected:</span>${provTags}`;
   }
 
   // ── Render table ─────────────────────────────────────────────────────────────
@@ -516,7 +516,7 @@
           <thead><tr>
             <th>Level</th>
             <th>Status</th>
-            <th>Community / Province</th>
+            <th>Community / PT</th>
             <th>Effective Time</th>
             <th>Active For</th>
             <th>Impact &amp; Confidence</th>
