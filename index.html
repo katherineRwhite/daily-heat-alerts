@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canada Daily Heat Alerts</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fdf8f3;
+    --surface: #fff;
+    --border: #e8ddd2;
+    --text: #1a1410;
+    --muted: #9a8878;
+    --yellow: #b45309;  --yellow-bg: #fffbeb; --yellow-border: #fcd34d;
+    --orange: #c2410c;  --orange-bg: #fff7ed; --orange-border: #fb923c;
+    --red:    #b91c1c;  --red-bg:    #fff1f2; --red-border:    #fca5a5;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 2px solid var(--text);
+    padding-bottom: 18px; margin-bottom: 28px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-text h1 { font-size: 1.05rem; font-weight: 500; }
+  .logo-text p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem; color: var(--muted); margin-top: 2px; letter-spacing: 0.04em;
+  }
+  .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Buttons ── */
+  button {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 0.03em; cursor: pointer;
+    border: 1.5px solid var(--text); padding: 7px 14px;
+    transition: all 0.15s; background: none; color: var(--text);
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  button:hover { background: var(--text); color: var(--bg); }
+  button.primary { background: var(--text); color: var(--bg); }
+  button.primary:hover { opacity: 0.75; }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  #refreshBtn.spinning svg { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Status row ── */
+  .status-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px; flex-wrap: wrap; gap: 8px;
+  }
+  .date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .source-tag {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+    padding: 2px 8px; border: 1px solid; display: none;
+  }
+  .source-tag.archived { color: #166534; background: #f0fdf4; border-color: #86efac; }
+  .source-tag.live     { color: #1e40af; background: #eff6ff; border-color: #93c5fd; }
+  .source-tag.fallback { color: #92400e; background: #fffbeb; border-color: #fcd34d; }
+
+  /* ── Notices ── */
+  .notice {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+    padding: 10px 14px; margin-bottom: 14px; border: 1px solid; display: none; line-height: 1.6;
+  }
+  .notice.warn  { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+  .notice.error { background: #fff5f5; border-color: #fca5a5; color: #991b1b; white-space: pre-wrap; }
+
+  /* ── Download panel ── */
+  .download-panel {
+    border: 1.5px solid var(--border); padding: 16px 20px;
+    margin-bottom: 24px; display: none;
+  }
+  .download-panel h2 {
+    font-size: 0.8rem; font-weight: 500; margin-bottom: 12px;
+  }
+  .download-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .download-row label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--muted);
+  }
+  input[type="date"] {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+    border: 1.5px solid var(--border); padding: 6px 10px;
+    background: var(--surface); color: var(--text); outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="date"]:focus { border-color: var(--text); }
+  .archive-count {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--muted);
+    margin-left: 4px;
+  }
+
+  /* ── State message ── */
+  .state-msg {
+    padding: 56px 20px; text-align: center;
+    border: 1.5px dashed var(--border);
+    color: var(--muted); font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.04em;
+  }
+  .state-msg .icon { font-size: 1.8rem; display: block; margin-bottom: 10px; }
+
+  /* ── Table ── */
+  .table-wrap { overflow-x: auto; border: 1.5px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+
+  thead { background: var(--text); color: var(--bg); }
+  thead th {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+    font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 10px 14px; text-align: left; white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #faf5ef; }
+  td { padding: 12px 14px; vertical-align: top; line-height: 1.45; }
+
+  /* Colour pill */
+  .colour-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; font-weight: 500;
+    padding: 3px 9px; border: 1px solid; border-radius: 2px;
+    white-space: nowrap; text-transform: capitalize;
+  }
+  .colour-pill .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .pill-yellow { color: var(--yellow); background: var(--yellow-bg); border-color: var(--yellow-border); }
+  .pill-yellow .dot { background: #f59e0b; }
+  .pill-orange { color: var(--orange); background: var(--orange-bg); border-color: var(--orange-border); }
+  .pill-orange .dot { background: #f97316; }
+  .pill-red    { color: var(--red);    background: var(--red-bg);    border-color: var(--red-border); }
+  .pill-red .dot    { background: #ef4444; }
+  .pill-default { color: var(--muted); background: #f5f5f5; border-color: #ddd; }
+  .pill-default .dot { background: #aaa; }
+
+  td.alert-name { font-weight: 500; min-width: 160px; }
+  td.area { min-width: 170px; }
+  td.issued-cell {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+    color: var(--muted); white-space: nowrap; min-width: 200px;
+  }
+  td.meta-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; min-width: 130px; }
+  .meta-line { margin-bottom: 3px; }
+  .meta-line:last-child { margin-bottom: 0; }
+  .meta-label { color: var(--muted); }
+  .meta-value { color: var(--text); }
+  td.detail-cell { min-width: 260px; max-width: 400px; }
+  .detail-text { font-size: 0.78rem; color: #4a3a30; line-height: 1.55; white-space: pre-wrap; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); line-height: 2;
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">
+      <span style="font-size:1.4rem">🌡️</span>
+      <div class="logo-text">
+        <h1>Canada Daily Heat Alerts</h1>
+        <p>Environment &amp; Climate Change Canada · Heat warnings only</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="refreshBtn" class="primary" onclick="init()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div class="status-row">
+    <span class="date-label" id="dateLabel">—</span>
+    <span class="source-tag" id="sourceTag"></span>
+  </div>
+
+  <div id="fallbackNotice" class="notice warn">
+    ⚠ Could not load archived data.json — showing live data from GeoMet API instead.
+    The daily archive will begin building once the GitHub Action runs.
+  </div>
+  <div id="errorBanner" class="error-banner notice error"></div>
+
+  <!-- Download panel (shown only when archive data is available) -->
+  <div class="download-panel" id="downloadPanel">
+    <h2>Download CSV</h2>
+    <div class="download-row">
+      <label>From</label>
+      <input type="date" id="dateFrom">
+      <label>to</label>
+      <input type="date" id="dateTo">
+      <button onclick="downloadRangeCSV()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download
+      </button>
+      <span class="archive-count" id="archiveCount"></span>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="state-msg"><span class="icon">⏳</span>Loading heat alerts…</div>
+  </div>
+
+  <footer>
+    Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
+    Archived daily by GitHub Actions · Falls back to live GeoMet API if archive unavailable<br>
+    Warning levels: Yellow · Orange · Red
+  </footer>
+
+</div>
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let todayAlerts  = [];   // what's shown in the table (today only)
+  let archiveAlerts = [];  // all dates from data.json (for range download)
+  let usingArchive  = false;
+
+  const HEAT_PATTERN = /heat|humidex|canicule|chaleur/i;
+  const COLOUR_ORDER = { red: 0, orange: 1, yellow: 2 };
+  const STOP_PHRASES = [
+    "Take action to protect", "Watch for the early signs",
+    "Heat stroke is a medical", "Drink water often", "Close blinds",
+    "Plan and schedule", "Extreme heat affects", "Never leave people",
+    "For more information", "Please continue to monitor",
+  ];
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function stripHtml(s) { return (s || '').replace(/<[^>]+>/g, '').trim(); }
+
+  function extractDetail(text) {
+    let out = (text || '').trim();
+    for (const p of STOP_PHRASES) {
+      const i = out.indexOf(p);
+      if (i > 80) { out = out.slice(0, i).trim(); break; }
+    }
+    return out.replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  function fmtIssuedLong(s) {
+    if (!s) return '—';
+    try {
+      const d = new Date(s);
+      const time = d.toLocaleString('en-CA', {
+        hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short'
+      }).replace('a.m.','AM').replace('p.m.','PM').replace('a. m.','AM').replace('p. m.','PM');
+      return `${time} ${d.toLocaleString('en-CA',{weekday:'long'})} ${d.getDate()} ${d.toLocaleString('en-CA',{month:'long'})} ${d.getFullYear()}`;
+    } catch { return s; }
+  }
+
+  function todayISO() { return new Date().toLocaleDateString('en-CA'); }
+
+  function sortAlerts(arr) {
+    return [...arr].sort((a, b) => {
+      const oa = COLOUR_ORDER[a.colour?.toLowerCase()] ?? 9;
+      const ob = COLOUR_ORDER[b.colour?.toLowerCase()] ?? 9;
+      return oa !== ob ? oa - ob : (a.province || '').localeCompare(b.province || '');
+    });
+  }
+
+  function colourPill(colour) {
+    const c = (colour || '').toLowerCase().trim();
+    const cls = c === 'red' ? 'pill-red' : c === 'orange' ? 'pill-orange' : c === 'yellow' ? 'pill-yellow' : 'pill-default';
+    return `<span class="colour-pill ${cls}"><span class="dot"></span>${esc(colour || 'unknown')}</span>`;
+  }
+
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Data loading ─────────────────────────────────────────────────────────────
+  async function init() {
+    setRefreshSpinning(true);
+    hideError(); hideFallbackNotice();
+
+    // 1. Try data.json first
+    const archiveOk = await tryLoadArchive();
+
+    if (!archiveOk) {
+      // 2. Fall back to live GeoMet
+      showFallbackNotice();
+      await loadLive();
+    }
+
+    setRefreshSpinning(false);
+  }
+
+  async function tryLoadArchive() {
+    try {
+      const res = await fetch('data.json?nocache=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const all = (json.alerts || []).filter(a => HEAT_PATTERN.test(a.alert_type || ''));
+
+      if (all.length === 0) {
+        // File exists but is empty — treat as first-run, still fall back to live
+        return false;
+      }
+
+      archiveAlerts = all;
+      usingArchive  = true;
+
+      // Show today's alerts in the table
+      const today = todayISO();
+      todayAlerts = sortAlerts(all.filter(a => a.date === today));
+
+      // If today has no entries yet (action hasn't run today), show most recent date
+      let displayDate = today;
+      if (todayAlerts.length === 0) {
+        const dates = [...new Set(all.map(a => a.date))].sort().reverse();
+        if (dates.length > 0) {
+          displayDate = dates[0];
+          todayAlerts = sortAlerts(all.filter(a => a.date === displayDate));
+        }
+      }
+
+      setSourceTag('archived', '📦 Archived data');
+      setDateLabel(displayDate);
+      setupDownloadPanel(all);
+      renderTable(todayAlerts);
+      return true;
+
+    } catch (e) {
+      console.warn('data.json unavailable:', e.message);
+      return false;
+    }
+  }
+
+  async function loadLive() {
+    try {
+      document.getElementById('main').innerHTML =
+        '<div class="state-msg"><span class="icon">⏳</span>Fetching live heat alerts from GeoMet…</div>';
+
+      const url = 'https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const today = todayISO();
+      todayAlerts = sortAlerts(
+        (data.features || [])
+          .map(f => {
+            const p = f.properties || {};
+            const raw = stripHtml(p.alert_text_en || '');
+            return {
+              date:       today,
+              colour:     p.risk_colour_en   || '',
+              alert_type: p.alert_name_en    || '',
+              community:  p.feature_name_en  || '—',
+              province:   p.province         || '—',
+              issued:     p.publication_datetime || '',
+              expires:    p.expiration_datetime  || '',
+              impact:     p.impact_en        || '',
+              confidence: p.confidence_en    || '',
+              detail:     extractDetail(raw),
+              alert_text: raw,
+            };
+          })
+          .filter(a => HEAT_PATTERN.test(a.alert_type))
+      );
+
+      usingArchive = false;
+      archiveAlerts = [];
+      setSourceTag('live', '🔴 Live — GeoMet API');
+      setDateLabel(today);
+      hideDownloadPanel();
+      renderTable(todayAlerts);
+
+    } catch (e) {
+      showError('Could not load live data: ' + e.message + '\n\nIf testing locally with file://, CORS will block the request.\nHost on GitHub Pages or run: python3 -m http.server 8080');
+      document.getElementById('main').innerHTML =
+        '<div class="state-msg"><span class="icon">⚠️</span>Failed to load data. See error above.</div>';
+    }
+  }
+
+  // ── Render table ─────────────────────────────────────────────────────────────
+  function renderTable(alerts) {
+    const container = document.getElementById('main');
+    if (alerts.length === 0) {
+      container.innerHTML =
+        '<div class="state-msg"><span class="icon">✅</span>No active heat alerts for this date.</div>';
+      return;
+    }
+
+    const rows = alerts.map(a => `
+      <tr>
+        <td>${colourPill(a.colour)}</td>
+        <td class="alert-name">${esc(a.alert_type)}</td>
+        <td class="area">${esc(a.community)}<br>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--muted)">${esc(a.province)}</span>
+        </td>
+        <td class="issued-cell">${esc(fmtIssuedLong(a.issued))}</td>
+        <td class="meta-cell">
+          <div class="meta-line"><span class="meta-label">Impact: </span><span class="meta-value">${esc(a.impact || '—')}</span></div>
+          <div class="meta-line"><span class="meta-label">Confidence: </span><span class="meta-value">${esc(a.confidence || '—')}</span></div>
+        </td>
+        <td class="detail-cell"><div class="detail-text">${esc(a.detail || a.alert_text || '')}</div></td>
+      </tr>`
+    ).join('');
+
+    container.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Level</th><th>Alert Type</th><th>Community / Province</th>
+            <th>Issued</th><th>Impact &amp; Confidence</th><th>Details</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  // ── Download panel ────────────────────────────────────────────────────────────
+  function setupDownloadPanel(all) {
+    const dates = [...new Set(all.map(a => a.date))].sort();
+    if (dates.length === 0) { hideDownloadPanel(); return; }
+
+    const panel = document.getElementById('downloadPanel');
+    panel.style.display = 'block';
+
+    const fromEl = document.getElementById('dateFrom');
+    const toEl   = document.getElementById('dateTo');
+    fromEl.min = toEl.min = dates[0];
+    fromEl.max = toEl.max = dates[dates.length - 1];
+    fromEl.value = dates[0];
+    toEl.value   = dates[dates.length - 1];
+
+    const unique = dates.length;
+    document.getElementById('archiveCount').textContent =
+      `${unique} day${unique !== 1 ? 's' : ''} archived · ${all.length} records`;
+  }
+
+  function hideDownloadPanel() {
+    document.getElementById('downloadPanel').style.display = 'none';
+  }
+
+  function downloadRangeCSV() {
+    const from = document.getElementById('dateFrom').value;
+    const to   = document.getElementById('dateTo').value;
+    if (!from || !to) return;
+
+    const rows = archiveAlerts.filter(a => a.date >= from && a.date <= to);
+    if (rows.length === 0) {
+      alert('No alerts found in that date range.');
+      return;
+    }
+
+    const fields = [
+      'date','colour','alert_type','community','province',
+      'issued','expires','impact','confidence','alert_text'
+    ];
+    const csvEsc = v => {
+      const s = String(v ?? '').replace(/"/g, '""');
+      return /[,\n"]/.test(s) ? `"${s}"` : s;
+    };
+    const lines = [
+      fields.join(','),
+      ...rows.map(r => fields.map(f => csvEsc(r[f])).join(','))
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `heat_alerts_${from}_to_${to}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── UI helpers ────────────────────────────────────────────────────────────────
+  function setRefreshSpinning(on) {
+    const btn = document.getElementById('refreshBtn');
+    btn.disabled = on;
+    on ? btn.classList.add('spinning') : btn.classList.remove('spinning');
+  }
+
+  function setDateLabel(dateStr) {
+    try {
+      const d = new Date(dateStr + 'T12:00:00');
+      document.getElementById('dateLabel').textContent =
+        d.toLocaleDateString('en-CA', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    } catch {
+      document.getElementById('dateLabel').textContent = dateStr;
+    }
+  }
+
+  function setSourceTag(type, label) {
+    const el = document.getElementById('sourceTag');
+    el.className = 'source-tag ' + type;
+    el.textContent = label;
+    el.style.display = 'inline';
+  }
+
+  function showFallbackNotice() { document.getElementById('fallbackNotice').style.display = 'block'; }
+  function hideFallbackNotice() { document.getElementById('fallbackNotice').style.display = 'none'; }
+
+  function showError(msg) {
+    const el = document.getElementById('errorBanner');
+    el.textContent = '⚠ ' + msg;
+    el.style.display = 'block';
+  }
+  function hideError() { document.getElementById('errorBanner').style.display = 'none'; }
+
+  // ── Boot ─────────────────────────────────────────────────────────────────────
+  init();
+</script>
+</body>
+</html>
