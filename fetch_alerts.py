@@ -67,17 +67,19 @@ def fetch_alerts() -> list[dict]:
         raw_text = strip_html(p.get("alert_text_en", ""))
 
         alerts.append({
-            "date":        today,
-            "colour":      p.get("risk_colour_en", ""),
-            "alert_type":  name,
-            "community":   p.get("feature_name_en", ""),
-            "province":    p.get("province", ""),
-            "issued":      p.get("publication_datetime", ""),
-            "expires":     p.get("expiration_datetime", ""),
-            "impact":      p.get("impact_en", ""),
-            "confidence":  p.get("confidence_en", ""),
-            "detail":      extract_detail(raw_text),
-            "alert_text":  raw_text,
+            "date":               today,
+            "colour":             p.get("risk_colour_en", ""),
+            "alert_type":         name,
+            "status":             p.get("status_en", ""),
+            "validity_datetime":  p.get("validity_datetime", ""),
+            "community":          p.get("feature_name_en", ""),
+            "province":           p.get("province", ""),
+            "issued":             p.get("publication_datetime", ""),
+            "expires":            p.get("expiration_datetime", ""),
+            "impact":             p.get("impact_en", ""),
+            "confidence":         p.get("confidence_en", ""),
+            "detail":             extract_detail(raw_text),
+            "alert_text":         raw_text,
         })
 
     print(f"Fetched {len(alerts)} heat alert(s) for {today}")
