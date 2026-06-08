@@ -265,15 +265,43 @@
   }
 
   // ── Data loading ─────────────────────────────────────────────────────────────
+  // Strategy:
+  //   1. Always fetch today live from GeoMet (most up-to-date effective times)
+  //   2. In parallel, load data.json for the historical archive (date-range download)
+  //   3. If GeoMet fails, fall back to today's slice from data.json
+  //   4. If both fail, show an error
+
   async function init() {
     setRefreshSpinning(true);
     hideError(); hideFallbackNotice();
 
-    const archiveOk = await tryLoadArchive();
-    if (!archiveOk) {
-      showFallbackNotice();
-      await loadLive();
+    const [liveResult, archiveResult] = await Promise.allSettled([
+      loadLive(),
+      tryLoadArchive(),
+    ]);
+
+    if (liveResult.status === 'fulfilled') {
+      // Live succeeded — show archive download if available
+      if (archiveResult.status === 'fulfilled' && archiveResult.value) {
+        setupDownloadSection(archiveAlerts);
+      }
+    } else {
+      // Live failed — fall back to today from archive
+      if (archiveResult.status === 'fulfilled' && archiveResult.value) {
+        showFallbackNotice();
+        const today = todayISO();
+        const fallback = sortAlerts(archiveAlerts.filter(a => a.date === today));
+        renderTable(fallback);
+        setDateLabel(today);
+        setSourceTag('archived', '📦 Archived — GeoMet unavailable');
+        setupDownloadSection(archiveAlerts);
+      } else {
+        showError('Could not load data from GeoMet or from the archive.\n\nIf testing locally with file://, CORS will block the request.\nHost on GitHub Pages or run: python3 -m http.server 8080');
+        document.getElementById('main').innerHTML =
+          '<div class="state-msg"><span class="icon">⚠️</span>Failed to load data. See error above.</div>';
+      }
     }
+
     setRefreshSpinning(false);
   }
 
@@ -284,26 +312,7 @@
       const json = await res.json();
       const all = (json.alerts || []).filter(a => HEAT_PATTERN.test(a.alert_type || ''));
       if (all.length === 0) return false;
-
       archiveAlerts = all;
-      usingArchive  = true;
-
-      const today = todayISO();
-      todayAlerts = sortAlerts(all.filter(a => a.date === today));
-
-      let displayDate = today;
-      if (todayAlerts.length === 0) {
-        const dates = [...new Set(all.map(a => a.date))].sort().reverse();
-        if (dates.length > 0) {
-          displayDate = dates[0];
-          todayAlerts = sortAlerts(all.filter(a => a.date === displayDate));
-        }
-      }
-
-      setSourceTag('archived', '📦 Archived data');
-      setDateLabel(displayDate);
-      setupDownloadSection(all);
-      renderTable(todayAlerts);
       return true;
     } catch (e) {
       console.warn('data.json unavailable:', e.message);
@@ -312,50 +321,42 @@
   }
 
   async function loadLive() {
-    try {
-      document.getElementById('main').innerHTML =
-        '<div class="state-msg"><span class="icon">⏳</span>Fetching live heat alerts from GeoMet…</div>';
+    document.getElementById('main').innerHTML =
+      '<div class="state-msg"><span class="icon">⏳</span>Fetching live heat alerts from GeoMet…</div>';
 
-      const res = await fetch('https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const today = todayISO();
+    const res = await fetch('https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const today = todayISO();
 
-      todayAlerts = sortAlerts(
-        (data.features || [])
-          .map(f => {
-            const p = f.properties || {};
-            const raw = stripHtml(p.alert_text_en || '');
-            return {
-              date:             today,
-              colour:           p.risk_colour_en        || '',
-              alert_type:       p.alert_name_en         || '',
-              community:        p.feature_name_en       || '—',
-              province:         p.province              || '—',
-              status:           p.status_en             || '',
-              validity_datetime: p.validity_datetime    || '',
-              issued:           p.publication_datetime  || '',
-              expires:          p.expiration_datetime   || '',
-              impact:           p.impact_en             || '',
-              confidence:       p.confidence_en         || '',
-              detail:           extractDetail(raw),
-              alert_text:       raw,
-            };
-          })
-          .filter(a => HEAT_PATTERN.test(a.alert_type))
-      );
+    todayAlerts = sortAlerts(
+      (data.features || [])
+        .map(f => {
+          const p = f.properties || {};
+          const raw = stripHtml(p.alert_text_en || '');
+          return {
+            date:              today,
+            colour:            p.risk_colour_en       || '',
+            alert_type:        p.alert_name_en        || '',
+            community:         p.feature_name_en      || '—',
+            province:          p.province             || '—',
+            status:            p.status_en            || '',
+            validity_datetime: p.validity_datetime    || '',
+            issued:            p.publication_datetime || '',
+            expires:           p.expiration_datetime  || '',
+            impact:            p.impact_en            || '',
+            confidence:        p.confidence_en        || '',
+            detail:            extractDetail(raw),
+            alert_text:        raw,
+          };
+        })
+        .filter(a => HEAT_PATTERN.test(a.alert_type))
+    );
 
-      usingArchive = false;
-      archiveAlerts = [];
-      setSourceTag('live', '🔴 Live — GeoMet API');
-      setDateLabel(today);
-      hideDownloadSection();
-      renderTable(todayAlerts);
-    } catch (e) {
-      showError('Could not load live data: ' + e.message + '\n\nIf testing locally with file://, CORS will block the request.\nHost on GitHub Pages or run: python3 -m http.server 8080');
-      document.getElementById('main').innerHTML =
-        '<div class="state-msg"><span class="icon">⚠️</span>Failed to load data. See error above.</div>';
-    }
+    setSourceTag('live', '🔴 Live — GeoMet API');
+    setDateLabel(today);
+    renderTable(todayAlerts);
+    // Note: archive download section is set up by init() after this resolves
   }
 
   // ── Render table ─────────────────────────────────────────────────────────────
