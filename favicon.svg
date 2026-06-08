@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Red outer triangle -->
+  <polygon points="16,1 31,29 1,29" fill="#b91c1c"/>
+  <!-- Orange middle triangle -->
+  <polygon points="16,6 27.5,27 4.5,27" fill="#f59e0b"/>
+  <!-- Yellow inner triangle -->
+  <polygon points="16,11 24,25 8,25" fill="#fde047"/>
+  <!-- Exclamation stem -->
+  <rect x="14.5" y="14" width="3" height="6" rx="1.5" fill="white"/>
+  <!-- Exclamation dot -->
+  <circle cx="16" cy="23" r="1.8" fill="white"/>
+</svg>
