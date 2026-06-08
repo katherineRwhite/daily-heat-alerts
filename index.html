@@ -32,8 +32,8 @@
     gap: 16px; flex-wrap: wrap;
   }
   .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-text h1 { font-size: 1.05rem; font-weight: 500; }
-  .logo-text p { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--muted); margin-top: 2px; letter-spacing: 0.04em; }
+  .logo-text h1 { font-size: 1.6rem; font-weight: 500; letter-spacing: -0.01em; }
+  .logo-text p { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-top: 4px; letter-spacing: 0.04em; }
   .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
   /* ── Buttons ── */
@@ -53,7 +53,7 @@
 
   /* ── Status row ── */
   .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; }
-  .date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
   .source-tag { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 2px 8px; border: 1px solid; display: none; }
   .source-tag.archived { color: #166534; background: #f0fdf4; border-color: #86efac; }
   .source-tag.live     { color: #1e40af; background: #eff6ff; border-color: #93c5fd; }
@@ -69,18 +69,18 @@
 
   /* ── Table ── */
   .table-wrap { overflow-x: auto; border: 1.5px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   thead { background: var(--text); color: var(--bg); }
-  thead th { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 14px; text-align: left; white-space: nowrap; }
+  thead th { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 11px 14px; text-align: left; white-space: nowrap; }
   tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: #faf5ef; }
-  td { padding: 12px 14px; vertical-align: top; line-height: 1.45; }
+  td { padding: 14px 14px; vertical-align: top; line-height: 1.5; }
 
   /* Colour pill */
   .colour-pill {
     display: inline-flex; align-items: center; gap: 5px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 500;
     padding: 3px 9px; border: 1px solid; border-radius: 2px; white-space: nowrap; text-transform: capitalize;
   }
   .colour-pill .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
@@ -96,20 +96,23 @@
   /* Status pill */
   .status-pill {
     display: inline-flex; align-items: center; gap: 4px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500;
     padding: 2px 7px; border: 1px solid; border-radius: 2px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.06em;
   }
   .status-new  { color: var(--new-text);  background: var(--new-bg);  border-color: var(--new-border); }
   .status-cont { color: var(--cont-text); background: var(--cont-bg); border-color: var(--cont-border); }
 
   td.area { min-width: 170px; }
-  td.time-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--muted); white-space: nowrap; min-width: 180px; }
-  td.meta-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; min-width: 130px; }
+  td.time-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted); white-space: nowrap; min-width: 180px; }
+  td.meta-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; min-width: 130px; }
   .meta-line { margin-bottom: 3px; }
   .meta-line:last-child { margin-bottom: 0; }
   .meta-label { color: var(--muted); }
   td.detail-cell { min-width: 260px; max-width: 400px; }
-  .detail-text { font-size: 0.78rem; color: #4a3a30; line-height: 1.55; white-space: pre-wrap; }
+  td.duration-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; white-space: nowrap; min-width: 100px; }
+  .duration-val { font-weight: 500; }
+  .duration-na { color: var(--muted); }
+  .detail-text { font-size: 0.86rem; color: #4a3a30; line-height: 1.6; white-space: pre-wrap; }
 
   /* ── Download panel (bottom) ── */
   .download-section {
@@ -139,7 +142,7 @@
 
   <header>
     <div class="logo">
-      <span style="font-size:1.4rem">🌡️</span>
+      <span style="font-size:2rem">🌡️</span>
       <div class="logo-text">
         <h1>Canada Daily Heat Alerts</h1>
         <p>Environment &amp; Climate Change Canada · Heat warnings only</p>
@@ -234,6 +237,27 @@
       const year    = d.getFullYear();
       return `${time}\n${weekday} ${day} ${month} ${year}`;
     } catch { return s; }
+  }
+
+  // How long an alert has been active (for "continued" alerts)
+  // Uses validity_datetime (when alert took effect) as the start
+  function activeDuration(validityStr, status) {
+    if ((status || '').toLowerCase() !== 'continued') return null;
+    if (!validityStr) return null;
+    try {
+      const start = new Date(validityStr);
+      const now   = new Date();
+      const diffMs = now - start;
+      if (diffMs < 0) return null;
+      const totalMins = Math.floor(diffMs / 60000);
+      const days  = Math.floor(totalMins / 1440);
+      const hours = Math.floor((totalMins % 1440) / 60);
+      const mins  = totalMins % 60;
+      if (days > 0 && hours > 0) return `${days}d ${hours}h`;
+      if (days > 0)  return `${days}d`;
+      if (hours > 0) return `${hours}h ${mins}m`;
+      return `${mins}m`;
+    } catch { return null; }
   }
 
   function todayISO() { return new Date().toLocaleDateString('en-CA'); }
@@ -367,21 +391,27 @@
       return;
     }
 
-    const rows = alerts.map(a => `
+    const rows = alerts.map(a => {
+      const dur = activeDuration(a.validity_datetime || a.issued, a.status);
+      const durCell = dur
+        ? `<span class="duration-val">${esc(dur)}</span>`
+        : `<span class="duration-na">—</span>`;
+      return `
       <tr>
         <td>${colourPill(a.colour)}</td>
         <td>${statusPill(a.status)}</td>
         <td class="area">${esc(a.community)}<br>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--muted)">${esc(a.province)}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:var(--muted)">${esc(a.province)}</span>
         </td>
         <td class="time-cell">${esc(fmtValidityTime(a.validity_datetime || a.issued))}</td>
+        <td class="duration-cell">${durCell}</td>
         <td class="meta-cell">
           <div class="meta-line"><span class="meta-label">Impact: </span>${esc(a.impact || '—')}</div>
           <div class="meta-line"><span class="meta-label">Confidence: </span>${esc(a.confidence || '—')}</div>
         </td>
         <td class="detail-cell"><div class="detail-text">${esc(a.detail || a.alert_text || '')}</div></td>
-      </tr>`
-    ).join('');
+      </tr>`;
+    }).join('');
 
     container.innerHTML = `
       <div class="table-wrap">
@@ -391,6 +421,7 @@
             <th>Status</th>
             <th>Community / Province</th>
             <th>Effective Time</th>
+            <th>Active For</th>
             <th>Impact &amp; Confidence</th>
             <th>Details</th>
           </tr></thead>
