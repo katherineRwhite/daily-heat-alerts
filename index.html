@@ -103,16 +103,54 @@
   .status-cont { color: var(--cont-text); background: var(--cont-bg); border-color: var(--cont-border); }
 
   td.area { min-width: 170px; }
-  td.time-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted); white-space: nowrap; min-width: 180px; }
+  td.time-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; color: var(--muted); white-space: normal; min-width: 110px; max-width: 130px; }
+  .time-line { display: block; white-space: nowrap; }
   td.meta-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; min-width: 130px; }
   .meta-line { margin-bottom: 3px; }
   .meta-line:last-child { margin-bottom: 0; }
   .meta-label { color: var(--muted); }
-  td.detail-cell { min-width: 260px; max-width: 400px; }
+  td.detail-cell { min-width: 320px; width: 40%; }
   td.duration-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; white-space: nowrap; min-width: 100px; }
   .duration-val { font-weight: 500; }
   .duration-na { color: var(--muted); }
   .detail-text { font-size: 0.86rem; color: #4a3a30; line-height: 1.6; white-space: pre-wrap; }
+
+  /* ── Summary box ── */
+  .summary-box {
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: none;
+  }
+  .summary-box.has-alerts { border-color: #f59e0b; background: #fffdf7; }
+  .summary-top {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .summary-total {
+    font-size: 2.4rem; font-weight: 300; line-height: 1; letter-spacing: -0.02em; color: var(--text);
+  }
+  .summary-total span { font-size: 1rem; font-weight: 400; color: var(--muted); margin-left: 4px; }
+  .summary-pills { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .summary-pill {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 500;
+    padding: 4px 12px; border: 1px solid; border-radius: 2px; white-space: nowrap;
+  }
+  .summary-pill.new  { color: var(--new-text);  background: var(--new-bg);  border-color: var(--new-border); }
+  .summary-pill.cont { color: var(--cont-text); background: var(--cont-bg); border-color: var(--cont-border); }
+  .summary-divider { width: 100%; height: 1px; background: var(--border); margin: 14px 0; }
+  .summary-provinces {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  }
+  .summary-prov-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-right: 2px;
+  }
+  .prov-tag {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+    background: #f5ede3; color: #7a4a20; border: 1px solid #e8d0b8;
+    padding: 3px 10px; border-radius: 2px; white-space: nowrap;
+  }
+  .summary-none { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
 
   /* ── Download panel (bottom) ── */
   .download-section {
@@ -169,6 +207,16 @@
   </div>
   <div id="errorBanner" class="notice error"></div>
 
+  <!-- Summary box -->
+  <div class="summary-box" id="summaryBox">
+    <div class="summary-top">
+      <div class="summary-total" id="summaryTotal">0<span>active alerts</span></div>
+      <div class="summary-pills" id="summaryPills"></div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-provinces" id="summaryProvinces"></div>
+  </div>
+
   <div id="main">
     <div class="state-msg"><span class="icon">⏳</span>Loading heat alerts…</div>
   </div>
@@ -223,40 +271,39 @@
     return out.replace(/\n{3,}/g, '\n\n').trim();
   }
 
-  // Format validity_datetime as "5:00 AM EDT Monday 8 June 2026"
+  // Format validity_datetime with time on line 1, date on line 2
   function fmtValidityTime(s) {
-    if (!s) return '—';
+    if (!s) return '<span class="time-line">—</span>';
     try {
       const d = new Date(s);
       const time = d.toLocaleString('en-CA', {
         hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short'
       }).replace('a.m.','AM').replace('p.m.','PM').replace('a. m.','AM').replace('p. m.','PM');
-      const weekday = d.toLocaleString('en-CA', { weekday: 'long' });
+      const weekday = d.toLocaleString('en-CA', { weekday: 'short' });
       const day     = d.getDate();
-      const month   = d.toLocaleString('en-CA', { month: 'long' });
+      const month   = d.toLocaleString('en-CA', { month: 'short' });
       const year    = d.getFullYear();
-      return `${time}\n${weekday} ${day} ${month} ${year}`;
-    } catch { return s; }
+      return `<span class="time-line">${esc(time)}</span><span class="time-line" style="margin-top:2px">${esc(weekday + ' ' + day + ' ' + month + ' ' + year)}</span>`;
+    } catch { return `<span class="time-line">${esc(s)}</span>`; }
   }
 
-  // How long an alert has been active (for "continued" alerts)
-  // Uses validity_datetime (when alert took effect) as the start
+  // How long an alert has been active — only shown when archive has data from a prior day.
+  // Returns day count string for "continued" alerts, null otherwise.
+  // archiveHasPriorDay is set by init() after tryLoadArchive resolves.
+  let archiveHasPriorDay = false;
+
   function activeDuration(validityStr, status) {
+    if (!archiveHasPriorDay) return null;
     if ((status || '').toLowerCase() !== 'continued') return null;
     if (!validityStr) return null;
     try {
-      const start = new Date(validityStr);
-      const now   = new Date();
-      const diffMs = now - start;
+      const start   = new Date(validityStr);
+      const now     = new Date();
+      const diffMs  = now - start;
       if (diffMs < 0) return null;
-      const totalMins = Math.floor(diffMs / 60000);
-      const days  = Math.floor(totalMins / 1440);
-      const hours = Math.floor((totalMins % 1440) / 60);
-      const mins  = totalMins % 60;
-      if (days > 0 && hours > 0) return `${days}d ${hours}h`;
-      if (days > 0)  return `${days}d`;
-      if (hours > 0) return `${hours}h ${mins}m`;
-      return `${mins}m`;
+      const days = Math.floor(diffMs / 86400000);
+      if (days < 1) return '< 1 day';
+      return `${days} day${days !== 1 ? 's' : ''}`;
     } catch { return null; }
   }
 
@@ -337,9 +384,13 @@
       const all = (json.alerts || []).filter(a => HEAT_PATTERN.test(a.alert_type || ''));
       if (all.length === 0) return false;
       archiveAlerts = all;
+      // Check if archive has at least one entry from before today
+      const today = todayISO();
+      archiveHasPriorDay = all.some(a => a.date < today);
       return true;
     } catch (e) {
       console.warn('data.json unavailable:', e.message);
+      archiveHasPriorDay = false;
       return false;
     }
   }
@@ -383,8 +434,54 @@
     // Note: archive download section is set up by init() after this resolves
   }
 
+  // ── Summary box ──────────────────────────────────────────────────────────────
+  function renderSummary(alerts) {
+    const box = document.getElementById('summaryBox');
+
+    if (alerts.length === 0) {
+      box.className = 'summary-box';
+      box.style.display = 'block';
+      document.getElementById('summaryTotal').innerHTML = '0<span>active alerts</span>';
+      document.getElementById('summaryPills').innerHTML = '';
+      document.getElementById('summaryProvinces').innerHTML =
+        '<span class="summary-none">No active heat alerts in Canada right now.</span>';
+      return;
+    }
+
+    const newCount  = alerts.filter(a => (a.status || '').toLowerCase() === 'issued').length;
+    const contCount = alerts.filter(a => (a.status || '').toLowerCase() === 'continued').length;
+
+    // Unique provinces, sorted
+    const PROV_ORDER = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
+    const provinces = [...new Set(alerts.map(a => a.province).filter(Boolean))];
+    provinces.sort((a, b) => {
+      const ia = PROV_ORDER.indexOf(a);
+      const ib = PROV_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+
+    box.className = 'summary-box has-alerts';
+    box.style.display = 'block';
+
+    document.getElementById('summaryTotal').innerHTML =
+      `${alerts.length}<span>active heat alert${alerts.length !== 1 ? 's' : ''}</span>`;
+
+    const pills = [];
+    if (newCount  > 0) pills.push(`<span class="summary-pill new">★ ${newCount} new</span>`);
+    if (contCount > 0) pills.push(`<span class="summary-pill cont">${contCount} continued</span>`);
+    document.getElementById('summaryPills').innerHTML = pills.join('');
+
+    const provTags = provinces.map(p => `<span class="prov-tag">${esc(p)}</span>`).join('');
+    document.getElementById('summaryProvinces').innerHTML =
+      `<span class="summary-prov-label">Provinces / territories affected:</span>${provTags}`;
+  }
+
   // ── Render table ─────────────────────────────────────────────────────────────
   function renderTable(alerts) {
+    renderSummary(alerts);
     const container = document.getElementById('main');
     if (alerts.length === 0) {
       container.innerHTML = '<div class="state-msg"><span class="icon">✅</span>No active heat alerts for this date.</div>';
@@ -403,7 +500,7 @@
         <td class="area">${esc(a.community)}<br>
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:var(--muted)">${esc(a.province)}</span>
         </td>
-        <td class="time-cell">${esc(fmtValidityTime(a.validity_datetime || a.issued))}</td>
+        <td class="time-cell">${fmtValidityTime(a.validity_datetime || a.issued)}</td>
         <td class="duration-cell">${durCell}</td>
         <td class="meta-cell">
           <div class="meta-line"><span class="meta-label">Impact: </span>${esc(a.impact || '—')}</div>
