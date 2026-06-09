@@ -165,15 +165,17 @@
     fill: #f0e8df; stroke: #c8b8a8; stroke-width: 0.8;
     transition: fill 0.3s;
   }
-  .canada-map .pt-path.active {
-    fill: #f59e0b; stroke: #c2410c; stroke-width: 1.2;
-  }
+  .canada-map .pt-path.alert-yellow { fill: #fcd34d; stroke: #b45309; stroke-width: 1.2; }
+  .canada-map .pt-path.alert-orange { fill: #fb923c; stroke: #c2410c; stroke-width: 1.2; }
+  .canada-map .pt-path.alert-red    { fill: #f87171; stroke: #991b1b; stroke-width: 1.2; }
   .canada-map .pt-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 6px; fill: #9a8878; text-anchor: middle; pointer-events: none;
     font-weight: 500;
   }
-  .canada-map .pt-label.active { fill: #7c2d12; }
+  .canada-map .pt-label.alert-yellow { fill: #78350f; }
+  .canada-map .pt-label.alert-orange { fill: #7c2d12; }
+  .canada-map .pt-label.alert-red    { fill: #7f1d1d; }
 
   /* ── Download panel (bottom) ── */
   .download-section {
@@ -587,18 +589,20 @@
   // ── Canada map highlighting ─────────────────────────────────────────────────
   const ALL_PTS = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
 
-  function updateMap(activePTs) {
-    const activeSet = new Set(activePTs.map(p => (p || '').toUpperCase().trim()));
+  // ptColourMap: { 'ON': 'red', 'MB': 'yellow', ... }
+  function updateMap(ptColourMap) {
+    const COLOUR_CLASSES = ['alert-yellow', 'alert-orange', 'alert-red'];
     ALL_PTS.forEach(pt => {
-      const path = document.getElementById('map-' + pt);
-      const lbl  = document.getElementById('lbl-' + pt);
+      const path   = document.getElementById('map-' + pt);
+      const lbl    = document.getElementById('lbl-' + pt);
       if (!path) return;
-      if (activeSet.has(pt)) {
-        path.classList.add('active');
-        if (lbl) lbl.classList.add('active');
-      } else {
-        path.classList.remove('active');
-        if (lbl) lbl.classList.remove('active');
+      // Remove all colour classes first
+      COLOUR_CLASSES.forEach(c => { path.classList.remove(c); if (lbl) lbl.classList.remove(c); });
+      const colour = ptColourMap[pt];
+      if (colour) {
+        const cls = 'alert-' + colour.toLowerCase();
+        path.classList.add(cls);
+        if (lbl) lbl.classList.add(cls);
       }
     });
   }
@@ -614,7 +618,7 @@
       document.getElementById('summaryPills').innerHTML = '';
       document.getElementById('summaryProvinces').innerHTML =
         '<span class="summary-none">No active heat alerts in Canada right now.</span>';
-      updateMap([]);
+      updateMap({});
       return;
     }
 
@@ -648,7 +652,19 @@
     document.getElementById('summaryProvinces').innerHTML =
       `<span class="summary-prov-label">PT affected:</span>${provTags}`;
 
-    updateMap(provinces);
+    // Build pt → highest colour map (red > orange > yellow)
+    const COLOUR_RANK = { red: 3, orange: 2, yellow: 1 };
+    const ptColourMap = {};
+    for (const a of alerts) {
+      const pt  = (a.province || '').toUpperCase().trim();
+      const col = (a.colour   || '').toLowerCase().trim();
+      if (!pt || !col) continue;
+      const rank = COLOUR_RANK[col] || 0;
+      if (!ptColourMap[pt] || rank > (COLOUR_RANK[ptColourMap[pt]] || 0)) {
+        ptColourMap[pt] = col;
+      }
+    }
+    updateMap(ptColourMap);
   }
 
   // ── Render table ─────────────────────────────────────────────────────────────
