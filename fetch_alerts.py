@@ -9,20 +9,14 @@ Run daily via GitHub Actions.
 import json
 import re
 import sys
-import time
-import urllib.request
-import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
-GEOMET_URL  = "https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en"
+GEOMET_URL = "https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en"
 DATA_FILE   = Path(__file__).parent / "data.json"
 HEAT_PATTERN = re.compile(r"heat|humidex|canicule|chaleur", re.IGNORECASE)
 
-TIMEOUT     = 60       # seconds per attempt
-MAX_RETRIES = 3        # number of attempts
-RETRY_DELAY = 10       # seconds between retries
-
+# Boilerplate phrases to truncate alert text before
 STOP_PHRASES = [
     "Take action to protect",
     "Watch for the early signs",
@@ -42,6 +36,7 @@ def strip_html(text: str) -> str:
 
 
 def extract_detail(text: str) -> str:
+    """Strip boilerplate health advice from the end of alert text."""
     out = text.strip()
     for phrase in STOP_PHRASES:
         idx = out.find(phrase)
@@ -51,34 +46,15 @@ def extract_detail(text: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", out).strip()
 
 
-def fetch_with_retry(url: str) -> dict:
-    last_error = None
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            print(f"  Attempt {attempt}/{MAX_RETRIES} — fetching {url}")
-            req = urllib.request.Request(url, headers={"User-Agent": "heat-alerts-bot/1.0"})
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-                return json.loads(resp.read().decode())
-        except urllib.error.HTTPError as e:
-            last_error = f"HTTP {e.code}: {e.reason}"
-            print(f"  HTTP error: {last_error}", file=sys.stderr)
-        except urllib.error.URLError as e:
-            last_error = str(e.reason)
-            print(f"  URL error: {last_error}", file=sys.stderr)
-        except Exception as e:
-            last_error = str(e)
-            print(f"  Unexpected error: {last_error}", file=sys.stderr)
+def fetch_alerts() -> list[dict]:
+    try:
+        import urllib.request
+        with urllib.request.urlopen(GEOMET_URL, timeout=30) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"ERROR fetching GeoMet API: {e}", file=sys.stderr)
+        sys.exit(1)
 
-        if attempt < MAX_RETRIES:
-            print(f"  Retrying in {RETRY_DELAY}s…")
-            time.sleep(RETRY_DELAY)
-
-    print(f"ERROR: all {MAX_RETRIES} attempts failed. Last error: {last_error}", file=sys.stderr)
-    sys.exit(1)
-
-
-def fetch_alerts():
-    data  = fetch_with_retry(GEOMET_URL)
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     alerts = []
 
@@ -92,25 +68,26 @@ def fetch_alerts():
 
         alerts.append({
             "date":               today,
-            "colour":             p.get("risk_colour_en",       ""),
+            "colour":             p.get("risk_colour_en", ""),
             "alert_type":         name,
-            "status":             p.get("status_en",            ""),
-            "validity_datetime":  p.get("validity_datetime",    ""),
-            "community":          p.get("feature_name_en",      ""),
-            "province":           p.get("province",             ""),
+            "status":             p.get("status_en", ""),
+            "validity_datetime":  p.get("validity_datetime", ""),
+            "community":          p.get("feature_name_en", ""),
+            "province":           p.get("province", ""),
             "issued":             p.get("publication_datetime", ""),
-            "expires":            p.get("expiration_datetime",  ""),
-            "impact":             p.get("impact_en",            ""),
-            "confidence":         p.get("confidence_en",        ""),
+            "expires":            p.get("expiration_datetime", ""),
+            "impact":             p.get("impact_en", ""),
+            "confidence":         p.get("confidence_en", ""),
             "detail":             extract_detail(raw_text),
             "alert_text":         raw_text,
+            "feature_id":         p.get("feature_id", ""),
         })
 
     print(f"Fetched {len(alerts)} heat alert(s) for {today}")
     return alerts, today
 
 
-def load_existing() -> list:
+def load_existing() -> list[dict]:
     if DATA_FILE.exists():
         try:
             return json.loads(DATA_FILE.read_text(encoding="utf-8")).get("alerts", [])
@@ -123,11 +100,15 @@ def main():
     new_alerts, today = fetch_alerts()
 
     existing = load_existing()
+
+    # Remove any existing entries for today (idempotent — safe to re-run)
     existing = [a for a in existing if a.get("date") != today]
 
     combined = existing + new_alerts
+
+    # Keep only the last 90 days to avoid the file growing indefinitely
     combined.sort(key=lambda a: a.get("date", ""), reverse=True)
-    combined = combined[:90 * 500]
+    combined = combined[:90 * 500]  # generous upper bound
 
     DATA_FILE.write_text(
         json.dumps({"alerts": combined}, ensure_ascii=False, indent=2),
