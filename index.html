@@ -102,17 +102,18 @@
   .status-new  { color: var(--new-text);  background: var(--new-bg);  border-color: var(--new-border); }
   .status-cont { color: var(--cont-text); background: var(--cont-bg); border-color: var(--cont-border); }
 
-  td.area { min-width: 170px; }
+  td.area { min-width: 120px; max-width: 160px; }
   td.time-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; color: var(--muted); white-space: normal; min-width: 110px; max-width: 130px; }
   .time-line { display: block; white-space: nowrap; }
   td.meta-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; min-width: 130px; }
   .meta-line { margin-bottom: 3px; }
   .meta-line:last-child { margin-bottom: 0; }
   .meta-label { color: var(--muted); }
-  td.detail-cell { min-width: 320px; width: 40%; }
+  td.detail-cell { min-width: 280px; width: 50%; }
   td.duration-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; white-space: nowrap; min-width: 100px; }
   .duration-val { font-weight: 500; }
   .duration-na { color: var(--muted); }
+  .first-issued-sub { display: block; font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
   .detail-text { font-size: 0.86rem; color: #4a3a30; line-height: 1.6; white-space: pre-wrap; }
 
   /* ── Summary box ── */
@@ -152,30 +153,11 @@
   }
   .summary-none { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
 
-  /* ── Canada map ── */
+  /* ── Summary layout ── */
   .summary-body {
     display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
   }
   .summary-left { flex: 1; min-width: 200px; }
-  .summary-map-wrap {
-    flex: 0 0 260px; width: 260px;
-  }
-  .canada-map { width: 100%; height: auto; display: block; }
-  .canada-map .pt-path {
-    fill: #f0e8df; stroke: #c8b8a8; stroke-width: 0.8;
-    transition: fill 0.3s;
-  }
-  .canada-map .pt-path.alert-yellow { fill: #fcd34d; stroke: #b45309; stroke-width: 1.2; }
-  .canada-map .pt-path.alert-orange { fill: #fb923c; stroke: #c2410c; stroke-width: 1.2; }
-  .canada-map .pt-path.alert-red    { fill: #f87171; stroke: #991b1b; stroke-width: 1.2; }
-  .canada-map .pt-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 6px; fill: #9a8878; text-anchor: middle; pointer-events: none;
-    font-weight: 500;
-  }
-  .canada-map .pt-label.alert-yellow { fill: #78350f; }
-  .canada-map .pt-label.alert-orange { fill: #7c2d12; }
-  .canada-map .pt-label.alert-red    { fill: #7f1d1d; }
 
   /* ── Download panel (bottom) ── */
   .download-section {
@@ -241,96 +223,6 @@
         </div>
         <div class="summary-divider"></div>
         <div class="summary-provinces" id="summaryProvinces"></div>
-      </div>
-      <div class="summary-map-wrap">
-        <svg class="canada-map" viewBox="0 0 300 230" xmlns="http://www.w3.org/2000/svg">
-
-          <!-- Yukon — wedge shape, northwest corner, follows Alaska border -->
-          <path id="map-YT" class="pt-path" d="
-            M 14,12 L 52,12 L 56,22 L 52,30 L 48,60 L 14,60 Z"/>
-          <text class="pt-label" id="lbl-YT" x="33" y="38">YT</text>
-
-          <!-- Northwest Territories — wide territory, notch for Nunavut at Hudson Bay -->
-          <path id="map-NT" class="pt-path" d="
-            M 52,12 L 118,12 L 118,22 L 108,22 L 106,36 L 96,40
-            L 94,55 L 80,55 L 78,60 L 56,60 L 48,60 L 52,30 L 56,22 Z"/>
-          <text class="pt-label" id="lbl-NT" x="82" y="30">NT</text>
-
-          <!-- Nunavut — huge territory, wraps east and north, Hudson Bay on west -->
-          <path id="map-NU" class="pt-path" d="
-            M 118,12 L 175,12 L 178,20 L 172,28 L 170,45
-            L 162,52 L 158,65 L 148,68 L 140,62 L 132,65
-            L 128,78 L 118,78 L 112,65 L 106,60 L 96,55
-            L 96,40 L 106,36 L 108,22 L 118,22 Z"/>
-          <text class="pt-label" id="lbl-NU" x="148" y="36">NU</text>
-
-          <!-- British Columbia — west coast, diagonal NE border, notch at Vancouver Island -->
-          <path id="map-BC" class="pt-path" d="
-            M 14,60 L 48,60 L 50,70 L 52,100 L 52,118
-            L 42,122 L 30,128 L 18,124 L 14,112 Z"/>
-          <text class="pt-label" id="lbl-BC" x="33" y="95">BC</text>
-
-          <!-- Alberta — near-rectangle, slightly wider at north -->
-          <path id="map-AB" class="pt-path" d="
-            M 78,60 L 52,60 L 50,70 L 52,118 L 80,118 L 80,60 Z"/>
-          <text class="pt-label" id="lbl-AB" x="65" y="92">AB</text>
-
-          <!-- Saskatchewan — true rectangle -->
-          <path id="map-SK" class="pt-path" d="
-            M 80,60 L 108,60 L 108,118 L 80,118 Z"/>
-          <text class="pt-label" id="lbl-SK" x="94" y="92">SK</text>
-
-          <!-- Manitoba — rectangle + notch at Hudson Bay southeast -->
-          <path id="map-MB" class="pt-path" d="
-            M 108,60 L 128,60 L 130,68 L 130,78 L 128,78
-            L 128,100 L 132,108 L 128,118 L 108,118 Z"/>
-          <text class="pt-label" id="lbl-MB" x="118" y="92">MB</text>
-
-          <!-- Ontario — distinctive shape: wide top, narrows around Great Lakes, point at south -->
-          <path id="map-ON" class="pt-path" d="
-            M 128,78 L 130,78 L 132,65 L 140,62 L 148,68
-            L 152,75 L 158,80 L 160,90 L 162,100
-            L 155,112 L 148,120 L 142,124 L 134,120
-            L 128,118 L 132,108 L 128,100 Z"/>
-          <text class="pt-label" id="lbl-ON" x="148" y="97">ON</text>
-
-          <!-- Quebec — large, tall province, wide north, narrows to Gaspé in SE -->
-          <path id="map-QC" class="pt-path" d="
-            M 148,68 L 158,65 L 162,52 L 170,45 L 178,42
-            L 188,48 L 192,60 L 196,72 L 194,85
-            L 188,95 L 184,105 L 176,115 L 168,120
-            L 160,118 L 155,112 L 162,100 L 160,90
-            L 158,80 L 152,75 Z"/>
-          <text class="pt-label" id="lbl-QC" x="178" y="82">QC</text>
-
-          <!-- New Brunswick — small, roughly square, south of Quebec -->
-          <path id="map-NB" class="pt-path" d="
-            M 196,104 L 206,104 L 208,114 L 202,120
-            L 196,118 L 192,112 Z"/>
-          <text class="pt-label" id="lbl-NB" x="200" y="113">NB</text>
-
-          <!-- Nova Scotia — narrow peninsula pointing SW, plus Cape Breton -->
-          <path id="map-NS" class="pt-path" d="
-            M 208,114 L 218,112 L 224,116 L 226,122
-            L 220,128 L 212,130 L 206,126 L 206,120 Z"/>
-          <text class="pt-label" id="lbl-NS" x="215" y="122">NS</text>
-
-          <!-- Prince Edward Island — small island north of NS -->
-          <path id="map-PE" class="pt-path" d="
-            M 216,106 L 224,104 L 226,108 L 220,112 L 214,110 Z"/>
-          <text class="pt-label" id="lbl-PE" x="220" y="109">PE</text>
-
-          <!-- Newfoundland and Labrador — Labrador (mainland) + island of Newfoundland -->
-          <!-- Labrador portion -->
-          <path id="map-NL" class="pt-path" d="
-            M 178,42 L 196,38 L 210,40 L 220,48 L 226,58
-            L 224,70 L 218,78 L 210,82 L 204,86
-            L 196,88 L 192,80 L 196,72 L 192,60 L 188,48 Z
-            M 222,88 L 230,84 L 238,88 L 240,98 L 234,106
-            L 224,108 L 218,102 L 218,94 Z"/>
-          <text class="pt-label" id="lbl-NL" x="210" y="58">NL</text>
-
-        </svg>
       </div>
     </div>
   </div>
@@ -586,27 +478,6 @@
     // Note: archive download section is set up by init() after this resolves
   }
 
-  // ── Canada map highlighting ─────────────────────────────────────────────────
-  const ALL_PTS = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
-
-  // ptColourMap: { 'ON': 'red', 'MB': 'yellow', ... }
-  function updateMap(ptColourMap) {
-    const COLOUR_CLASSES = ['alert-yellow', 'alert-orange', 'alert-red'];
-    ALL_PTS.forEach(pt => {
-      const path   = document.getElementById('map-' + pt);
-      const lbl    = document.getElementById('lbl-' + pt);
-      if (!path) return;
-      // Remove all colour classes first
-      COLOUR_CLASSES.forEach(c => { path.classList.remove(c); if (lbl) lbl.classList.remove(c); });
-      const colour = ptColourMap[pt];
-      if (colour) {
-        const cls = 'alert-' + colour.toLowerCase();
-        path.classList.add(cls);
-        if (lbl) lbl.classList.add(cls);
-      }
-    });
-  }
-
   // ── Summary box ──────────────────────────────────────────────────────────────
   function renderSummary(alerts) {
     const box = document.getElementById('summaryBox');
@@ -618,7 +489,6 @@
       document.getElementById('summaryPills').innerHTML = '';
       document.getElementById('summaryProvinces').innerHTML =
         '<span class="summary-none">No active heat alerts in Canada right now.</span>';
-      updateMap({});
       return;
     }
 
@@ -652,19 +522,6 @@
     document.getElementById('summaryProvinces').innerHTML =
       `<span class="summary-prov-label">PT affected:</span>${provTags}`;
 
-    // Build pt → highest colour map (red > orange > yellow)
-    const COLOUR_RANK = { red: 3, orange: 2, yellow: 1 };
-    const ptColourMap = {};
-    for (const a of alerts) {
-      const pt  = (a.province || '').toUpperCase().trim();
-      const col = (a.colour   || '').toLowerCase().trim();
-      if (!pt || !col) continue;
-      const rank = COLOUR_RANK[col] || 0;
-      if (!ptColourMap[pt] || rank > (COLOUR_RANK[ptColourMap[pt]] || 0)) {
-        ptColourMap[pt] = col;
-      }
-    }
-    updateMap(ptColourMap);
   }
 
   // ── Render table ─────────────────────────────────────────────────────────────
@@ -682,9 +539,7 @@
       const durCell = dur
         ? `<span class="duration-val">${esc(dur)}</span>`
         : `<span class="duration-na">—</span>`;
-      const firstCell = firstDt
-        ? `<span class="duration-val">${esc(firstDt)}</span>`
-        : `<span class="duration-na">—</span>`;
+
       return `
       <tr>
         <td>${colourPill(a.colour)}</td>
@@ -693,8 +548,7 @@
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:var(--muted)">${esc(a.province)}</span>
         </td>
         <td class="time-cell">${fmtValidityTime(a.validity_datetime || a.issued)}</td>
-        <td class="duration-cell">${durCell}</td>
-        <td class="duration-cell">${firstCell}</td>
+        <td class="duration-cell">${durCell}${firstDt ? `<span class="first-issued-sub">(${esc(firstDt)})</span>` : ''}</td>
         <td class="meta-cell">
           <div class="meta-line"><span class="meta-label">Impact: </span>${esc(a.impact || '—')}</div>
           <div class="meta-line"><span class="meta-label">Confidence: </span>${esc(a.confidence || '—')}</div>
@@ -712,7 +566,6 @@
             <th>Community / PT</th>
             <th>Effective Time</th>
             <th>Active For</th>
-            <th>First Issued</th>
             <th>Impact &amp; Confidence</th>
             <th>Details</th>
           </tr></thead>
