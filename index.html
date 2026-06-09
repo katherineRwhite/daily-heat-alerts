@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heat alerts today in Canada</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Canada Daily Heat Alerts</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -153,6 +152,29 @@
   }
   .summary-none { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
 
+  /* ── Canada map ── */
+  .summary-body {
+    display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .summary-left { flex: 1; min-width: 200px; }
+  .summary-map-wrap {
+    flex: 0 0 260px; width: 260px;
+  }
+  .canada-map { width: 100%; height: auto; display: block; }
+  .canada-map .pt-path {
+    fill: #f0e8df; stroke: #c8b8a8; stroke-width: 0.8;
+    transition: fill 0.3s;
+  }
+  .canada-map .pt-path.active {
+    fill: #f59e0b; stroke: #c2410c; stroke-width: 1.2;
+  }
+  .canada-map .pt-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 6px; fill: #9a8878; text-anchor: middle; pointer-events: none;
+    font-weight: 500;
+  }
+  .canada-map .pt-label.active { fill: #7c2d12; }
+
   /* ── Download panel (bottom) ── */
   .download-section {
     margin-top: 32px;
@@ -183,7 +205,7 @@
     <div class="logo">
       <span style="font-size:2rem">🌡️</span>
       <div class="logo-text">
-        <h1>Heat alerts today in Canada</h1>
+        <h1>Canada Daily Heat Alerts</h1>
         <p>Environment &amp; Climate Change Canada · Heat warnings only</p>
       </div>
     </div>
@@ -210,12 +232,59 @@
 
   <!-- Summary box -->
   <div class="summary-box" id="summaryBox">
-    <div class="summary-top">
-      <div class="summary-total" id="summaryTotal">0<span>active alerts</span></div>
-      <div class="summary-pills" id="summaryPills"></div>
+    <div class="summary-body">
+      <div class="summary-left">
+        <div class="summary-top">
+          <div class="summary-total" id="summaryTotal">0<span>active alerts</span></div>
+          <div class="summary-pills" id="summaryPills"></div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-provinces" id="summaryProvinces"></div>
+      </div>
+      <div class="summary-map-wrap">
+        <svg class="canada-map" viewBox="0 0 260 220" xmlns="http://www.w3.org/2000/svg">
+          <!-- Yukon -->
+          <path id="map-YT" class="pt-path" d="M 10,10 L 48,10 L 52,18 L 45,55 L 10,55 Z"/>
+          <text class="pt-label" id="lbl-YT" x="31" y="36">YT</text>
+          <!-- Northwest Territories -->
+          <path id="map-NT" class="pt-path" d="M 48,10 L 100,10 L 100,20 L 88,20 L 88,38 L 75,38 L 75,55 L 52,55 L 45,55 L 52,18 Z"/>
+          <text class="pt-label" id="lbl-NT" x="74" y="30">NT</text>
+          <!-- Nunavut -->
+          <path id="map-NU" class="pt-path" d="M 100,10 L 155,10 L 155,65 L 130,65 L 125,80 L 110,80 L 105,65 L 88,65 L 88,38 L 100,38 L 100,20 Z"/>
+          <text class="pt-label" id="lbl-NU" x="127" y="40">NU</text>
+          <!-- British Columbia -->
+          <path id="map-BC" class="pt-path" d="M 10,55 L 45,55 L 48,95 L 35,110 L 10,110 Z"/>
+          <text class="pt-label" id="lbl-BC" x="28" y="85">BC</text>
+          <!-- Alberta -->
+          <path id="map-AB" class="pt-path" d="M 45,55 L 75,55 L 75,110 L 48,110 L 48,95 Z"/>
+          <text class="pt-label" id="lbl-AB" x="60" y="85">AB</text>
+          <!-- Saskatchewan -->
+          <path id="map-SK" class="pt-path" d="M 75,55 L 105,55 L 105,110 L 75,110 Z"/>
+          <text class="pt-label" id="lbl-SK" x="90" y="85">SK</text>
+          <!-- Manitoba -->
+          <path id="map-MB" class="pt-path" d="M 105,55 L 130,55 L 133,80 L 133,110 L 105,110 Z"/>
+          <text class="pt-label" id="lbl-MB" x="117" y="85">MB</text>
+          <!-- Ontario -->
+          <path id="map-ON" class="pt-path" d="M 130,55 L 155,65 L 170,75 L 175,95 L 165,110 L 155,115 L 145,108 L 133,110 L 133,80 L 130,65 Z"/>
+          <text class="pt-label" id="lbl-ON" x="153" y="90">ON</text>
+          <!-- Quebec -->
+          <path id="map-QC" class="pt-path" d="M 155,65 L 185,55 L 200,65 L 205,85 L 195,105 L 175,115 L 165,110 L 175,95 L 170,75 Z"/>
+          <text class="pt-label" id="lbl-QC" x="183" y="87">QC</text>
+          <!-- New Brunswick -->
+          <path id="map-NB" class="pt-path" d="M 195,105 L 210,105 L 213,118 L 200,122 L 193,118 Z"/>
+          <text class="pt-label" id="lbl-NB" x="202" y="114">NB</text>
+          <!-- Nova Scotia -->
+          <path id="map-NS" class="pt-path" d="M 213,118 L 225,115 L 228,125 L 218,130 L 210,128 L 210,122 Z"/>
+          <text class="pt-label" id="lbl-NS" x="218" y="123">NS</text>
+          <!-- Prince Edward Island -->
+          <path id="map-PE" class="pt-path" d="M 218,108 L 228,106 L 230,112 L 220,114 Z"/>
+          <text class="pt-label" id="lbl-PE" x="224" y="111">PE</text>
+          <!-- Newfoundland and Labrador -->
+          <path id="map-NL" class="pt-path" d="M 200,65 L 230,60 L 245,75 L 240,95 L 225,100 L 205,85 Z"/>
+          <text class="pt-label" id="lbl-NL" x="222" y="78">NL</text>
+        </svg>
+      </div>
     </div>
-    <div class="summary-divider"></div>
-    <div class="summary-provinces" id="summaryProvinces"></div>
   </div>
 
   <div id="main">
@@ -288,24 +357,56 @@
     } catch { return `<span class="time-line">${esc(s)}</span>`; }
   }
 
-  // How long an alert has been active — only shown when archive has data from a prior day.
-  // Returns day count string for "continued" alerts, null otherwise.
-  // archiveHasPriorDay is set by init() after tryLoadArchive resolves.
+  // archiveHasPriorDay: true once data.json has entries from before today.
+  // Used to gate the "Active For" and "First Issued" columns.
   let archiveHasPriorDay = false;
 
+  // Build a lookup: feature_id → earliest date with status "issued"
+  // Called after archiveAlerts is populated.
+  let firstIssuedLookup = {};
+
+  function buildFirstIssuedLookup() {
+    firstIssuedLookup = {};
+    for (const a of archiveAlerts) {
+      if ((a.status || '').toLowerCase() !== 'issued') continue;
+      const fid = a.feature_id || a.community + '|' + a.province;
+      if (!fid) continue;
+      if (!firstIssuedLookup[fid] || a.date < firstIssuedLookup[fid]) {
+        firstIssuedLookup[fid] = a.date;
+      }
+    }
+  }
+
+  // "Active For": calendar days since validity_datetime, for continued alerts only.
+  // Shows "1 day" if at least 1 full calendar day has passed, else null.
   function activeDuration(validityStr, status) {
     if (!archiveHasPriorDay) return null;
     if ((status || '').toLowerCase() !== 'continued') return null;
     if (!validityStr) return null;
     try {
-      const start   = new Date(validityStr);
-      const now     = new Date();
-      const diffMs  = now - start;
-      if (diffMs < 0) return null;
-      const days = Math.floor(diffMs / 86400000);
-      if (days < 1) return '< 1 day';
+      const startDate = new Date(validityStr).toLocaleDateString('en-CA');
+      const today     = todayISO();
+      // Count calendar days (not hours)
+      const start = new Date(startDate + 'T00:00:00');
+      const end   = new Date(today   + 'T00:00:00');
+      const days  = Math.round((end - start) / 86400000);
+      if (days < 1) return null;
       return `${days} day${days !== 1 ? 's' : ''}`;
     } catch { return null; }
+  }
+
+  // "First Issued": look up the earliest date this feature was "issued" in archive.
+  // Returns formatted date string, or null if not found or not a continued alert.
+  function firstIssuedDate(alert) {
+    if (!archiveHasPriorDay) return null;
+    if ((alert.status || '').toLowerCase() !== 'continued') return null;
+    const fid = alert.feature_id || alert.community + '|' + alert.province;
+    const date = firstIssuedLookup[fid];
+    if (!date) return null;
+    try {
+      const d = new Date(date + 'T12:00:00');
+      return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch { return date; }
   }
 
   function todayISO() { return new Date().toLocaleDateString('en-CA'); }
@@ -388,6 +489,7 @@
       // Check if archive has at least one entry from before today
       const today = todayISO();
       archiveHasPriorDay = all.some(a => a.date < today);
+      buildFirstIssuedLookup();
       return true;
     } catch (e) {
       console.warn('data.json unavailable:', e.message);
@@ -424,6 +526,7 @@
             confidence:        p.confidence_en        || '',
             detail:            extractDetail(raw),
             alert_text:        raw,
+            feature_id:        p.feature_id || '',
           };
         })
         .filter(a => HEAT_PATTERN.test(a.alert_type))
@@ -433,6 +536,25 @@
     setDateLabel(today);
     renderTable(todayAlerts);
     // Note: archive download section is set up by init() after this resolves
+  }
+
+  // ── Canada map highlighting ─────────────────────────────────────────────────
+  const ALL_PTS = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
+
+  function updateMap(activePTs) {
+    const activeSet = new Set(activePTs.map(p => (p || '').toUpperCase().trim()));
+    ALL_PTS.forEach(pt => {
+      const path = document.getElementById('map-' + pt);
+      const lbl  = document.getElementById('lbl-' + pt);
+      if (!path) return;
+      if (activeSet.has(pt)) {
+        path.classList.add('active');
+        if (lbl) lbl.classList.add('active');
+      } else {
+        path.classList.remove('active');
+        if (lbl) lbl.classList.remove('active');
+      }
+    });
   }
 
   // ── Summary box ──────────────────────────────────────────────────────────────
@@ -446,6 +568,7 @@
       document.getElementById('summaryPills').innerHTML = '';
       document.getElementById('summaryProvinces').innerHTML =
         '<span class="summary-none">No active heat alerts in Canada right now.</span>';
+      updateMap([]);
       return;
     }
 
@@ -478,6 +601,8 @@
     const provTags = provinces.map(p => `<span class="prov-tag">${esc(p)}</span>`).join('');
     document.getElementById('summaryProvinces').innerHTML =
       `<span class="summary-prov-label">PT affected:</span>${provTags}`;
+
+    updateMap(provinces);
   }
 
   // ── Render table ─────────────────────────────────────────────────────────────
@@ -490,9 +615,13 @@
     }
 
     const rows = alerts.map(a => {
-      const dur = activeDuration(a.validity_datetime || a.issued, a.status);
+      const dur     = activeDuration(a.validity_datetime || a.issued, a.status);
+      const firstDt = firstIssuedDate(a);
       const durCell = dur
         ? `<span class="duration-val">${esc(dur)}</span>`
+        : `<span class="duration-na">—</span>`;
+      const firstCell = firstDt
+        ? `<span class="duration-val">${esc(firstDt)}</span>`
         : `<span class="duration-na">—</span>`;
       return `
       <tr>
@@ -503,6 +632,7 @@
         </td>
         <td class="time-cell">${fmtValidityTime(a.validity_datetime || a.issued)}</td>
         <td class="duration-cell">${durCell}</td>
+        <td class="duration-cell">${firstCell}</td>
         <td class="meta-cell">
           <div class="meta-line"><span class="meta-label">Impact: </span>${esc(a.impact || '—')}</div>
           <div class="meta-line"><span class="meta-label">Confidence: </span>${esc(a.confidence || '—')}</div>
@@ -520,6 +650,7 @@
             <th>Community / PT</th>
             <th>Effective Time</th>
             <th>Active For</th>
+            <th>First Issued</th>
             <th>Impact &amp; Confidence</th>
             <th>Details</th>
           </tr></thead>
