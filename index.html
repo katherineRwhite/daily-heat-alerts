@@ -109,7 +109,7 @@
   .meta-line { margin-bottom: 3px; }
   .meta-line:last-child { margin-bottom: 0; }
   .meta-label { color: var(--muted); }
-  td.detail-cell { min-width: 280px; width: 50%; }
+  td.detail-cell { min-width: 280px; width: 50%; max-width: none; }
   td.duration-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; white-space: nowrap; min-width: 100px; }
   .duration-val { font-weight: 500; }
   .duration-na { color: var(--muted); }
@@ -652,7 +652,6 @@
       return `
       <tr>
         <td>${colourPill(a.colour)}</td>
-        <td>${statusPill(a.status)}</td>
         <td class="area">${esc(a.community)}<br>
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:var(--muted)">${esc(a.province)}</span>
         </td>
@@ -676,11 +675,10 @@
         <table>
           <thead><tr>
             <th>Level</th>
-            <th>Status</th>
             <th>Community / PT</th>
             <th>Effective Time</th>
             <th>Active For *</th>
-            <th>Co-occurring AQ Alert</th>
+            <th>AQ Warning</th>
             <th>Impact &amp; Confidence</th>
             <th>Details</th>
           </tr></thead>
@@ -767,12 +765,19 @@
       if (!groups[key]) {
         groups[key] = {
           key,
-          community:  a.community,
-          province:   a.province,
-          colour:     a.colour,
-          alert_type: a.alert_type,
-          dates:      [],
+          community:    a.community,
+          province:     a.province,
+          colour:       a.colour,
+          alert_type:   a.alert_type,
+          aq_colour:    a.aq_colour    || '',
+          aq_alert_type: a.aq_alert_type || '',
+          dates:        [],
         };
+      }
+      // Update AQ if this record has one and existing doesn't
+      if (!groups[key].aq_colour && a.aq_colour) {
+        groups[key].aq_colour     = a.aq_colour;
+        groups[key].aq_alert_type = a.aq_alert_type || '';
       }
       groups[key].dates.push(a.date);
       // Track highest colour seen
@@ -810,12 +815,16 @@
         ? fmtDateShort(g.firstDate)
         : `${fmtDateShort(g.firstDate)} – ${fmtDateShort(g.lastDate)}`;
       const activeBadge = g.isActive ? ' <span class="active-badge">● active</span>' : '';
+      const aqCell = g.aq_colour
+        ? aqPill(g.aq_colour) + '<span class="aq-type">' + esc(g.aq_alert_type || '') + '</span>'
+        : '<span class="aq-none">—</span>';
       return `
         <tr>
           <td>${colourPill(g.colour)}</td>
           <td class="community-cell">${esc(g.community)}<br><span class="pt">${esc(g.province)}</span></td>
           <td class="mono">${esc(dateRange)}${activeBadge}</td>
           <td class="mono">${g.dates.length} day${g.dates.length !== 1 ? 's' : ''}</td>
+          <td class="aq-cell">${aqCell}</td>
         </tr>`;
     }).join('');
 
@@ -827,6 +836,7 @@
             <th>Community / PT</th>
             <th>Date Range</th>
             <th>Days in Archive</th>
+            <th>AQ Warning</th>
           </tr></thead>
           <tbody>${tableRows}</tbody>
         </table>
@@ -869,5 +879,4 @@
 </script>
 </body>
 </html>
-
  
