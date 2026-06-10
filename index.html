@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -190,7 +191,7 @@
     <div class="logo">
 <div class="logo-text">
         <h1>Canada Daily Heat Alerts</h1>
-        <p>Today's Environment &amp; Climate Change Canada heat warnings</p>
+        <p>Environment &amp; Climate Change Canada · Heat warnings only</p>
       </div>
     </div>
     <div class="header-actions">
@@ -252,7 +253,9 @@
 
   <footer>
     Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
-    Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory
+    Archived daily by GitHub Actions · Falls back to live GeoMet API if archive unavailable<br>
+    Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory<br>
+    * Earliest date recorded in archive — may not reflect the original issue date
   </footer>
 
 </div>
@@ -298,50 +301,47 @@
   }
 
   // archiveHasPriorDay: true once data.json has entries from before today.
-  // Used to gate the "Active For" and "First Issued" columns.
   let archiveHasPriorDay = false;
 
-  // Build a lookup: feature_id → earliest date with status "issued"
-  // Called after archiveAlerts is populated.
-  let firstIssuedLookup = {};
+  // Build a lookup: feature_id → earliest date seen in archive (any status).
+  // Used for "Active For" (days) and "First Issued" (date label).
+  let firstSeenLookup = {};
 
   function buildFirstIssuedLookup() {
-    firstIssuedLookup = {};
+    firstSeenLookup = {};
     for (const a of archiveAlerts) {
-      if ((a.status || '').toLowerCase() !== 'issued') continue;
-      const fid = a.feature_id || a.community + '|' + a.province;
+      const fid = a.feature_id || (a.community + '|' + a.province);
       if (!fid) continue;
-      if (!firstIssuedLookup[fid] || a.date < firstIssuedLookup[fid]) {
-        firstIssuedLookup[fid] = a.date;
+      if (!firstSeenLookup[fid] || a.date < firstSeenLookup[fid]) {
+        firstSeenLookup[fid] = a.date;
       }
     }
   }
 
-  // "Active For": calendar days since validity_datetime, for continued alerts only.
-  // Shows "1 day" if at least 1 full calendar day has passed, else null.
-  function activeDuration(validityStr, status) {
+  // "Active For": calendar days from the earliest archived date for this feature to today.
+  // Only shown for continued alerts when archive has a prior day.
+  function activeDuration(alert) {
     if (!archiveHasPriorDay) return null;
-    if ((status || '').toLowerCase() !== 'continued') return null;
-    if (!validityStr) return null;
+    if ((alert.status || '').toLowerCase() !== 'continued') return null;
+    const fid = alert.feature_id || (alert.community + '|' + alert.province);
+    const earliest = firstSeenLookup[fid];
+    if (!earliest) return null;
     try {
-      const startDate = new Date(validityStr).toLocaleDateString('en-CA');
-      const today     = todayISO();
-      // Count calendar days (not hours)
-      const start = new Date(startDate + 'T00:00:00');
-      const end   = new Date(today   + 'T00:00:00');
+      const start = new Date(earliest + 'T00:00:00');
+      const end   = new Date(todayISO() + 'T00:00:00');
       const days  = Math.round((end - start) / 86400000);
       if (days < 1) return null;
       return `${days} day${days !== 1 ? 's' : ''}`;
     } catch { return null; }
   }
 
-  // "First Issued": look up the earliest date this feature was "issued" in archive.
-  // Returns formatted date string, or null if not found or not a continued alert.
+  // "First Issued": earliest date seen in archive for this feature.
+  // Only shown for continued alerts when archive has a prior day.
   function firstIssuedDate(alert) {
     if (!archiveHasPriorDay) return null;
     if ((alert.status || '').toLowerCase() !== 'continued') return null;
-    const fid = alert.feature_id || alert.community + '|' + alert.province;
-    const date = firstIssuedLookup[fid];
+    const fid = alert.feature_id || (alert.community + '|' + alert.province);
+    const date = firstSeenLookup[fid];
     if (!date) return null;
     try {
       const d = new Date(date + 'T12:00:00');
@@ -534,7 +534,7 @@
     }
 
     const rows = alerts.map(a => {
-      const dur     = activeDuration(a.validity_datetime || a.issued, a.status);
+      const dur     = activeDuration(a);
       const firstDt = firstIssuedDate(a);
       const durCell = dur
         ? `<span class="duration-val">${esc(dur)}</span>`
@@ -548,7 +548,7 @@
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:var(--muted)">${esc(a.province)}</span>
         </td>
         <td class="time-cell">${fmtValidityTime(a.validity_datetime || a.issued)}</td>
-        <td class="duration-cell">${durCell}${firstDt ? `<span class="first-issued-sub">(${esc(firstDt)})</span>` : ''}</td>
+        <td class="duration-cell">${durCell}${firstDt ? `<span class="first-issued-sub">(${esc(firstDt)})*</span>` : ''}</td>
         <td class="meta-cell">
           <div class="meta-line"><span class="meta-label">Impact: </span>${esc(a.impact || '—')}</div>
           <div class="meta-line"><span class="meta-label">Confidence: </span>${esc(a.confidence || '—')}</div>
@@ -565,7 +565,7 @@
             <th>Status</th>
             <th>Community / PT</th>
             <th>Effective Time</th>
-            <th>Active For</th>
+            <th>Active For *</th>
             <th>Impact &amp; Confidence</th>
             <th>Details</th>
           </tr></thead>
