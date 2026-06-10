@@ -280,35 +280,37 @@
     <button class="tab-btn" id="tab-previous" onclick="switchTab('previous')">Previous Alerts</button>
   </div>
 
-  <div id="fallbackNotice" class="notice warn">
-    ⚠ Could not load archived data.json — showing live data from GeoMet API instead.
-    The daily archive will begin building once the GitHub Action runs.
-  </div>
-  <div id="errorBanner" class="notice error"></div>
+  <div id="panel-today">
 
-  <!-- Summary box -->
-  <div class="summary-box" id="summaryBox">
-    <div class="summary-body">
-      <div class="summary-left">
-        <div class="summary-top">
-          <div class="summary-total" id="summaryTotal">0<span>active alerts</span></div>
-          <div class="summary-pills" id="summaryPills"></div>
+    <div id="fallbackNotice" class="notice warn">
+      ⚠ Could not load archived data.json — showing live data from GeoMet API instead.
+      The daily archive will begin building once the GitHub Action runs.
+    </div>
+    <div id="errorBanner" class="notice error"></div>
+
+    <!-- Summary box -->
+    <div class="summary-box" id="summaryBox">
+      <div class="summary-body">
+        <div class="summary-left">
+          <div class="summary-top">
+            <div class="summary-total" id="summaryTotal">0<span>active alerts</span></div>
+            <div class="summary-pills" id="summaryPills"></div>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-provinces" id="summaryProvinces"></div>
         </div>
-        <div class="summary-divider"></div>
-        <div class="summary-provinces" id="summaryProvinces"></div>
       </div>
     </div>
-  </div>
 
-  <div id="panel-today">
     <div id="main">
       <div class="state-msg"><span class="icon">⏳</span>Loading heat alerts…</div>
     </div>
+
   </div>
 
   <div id="panel-previous" style="display:none">
     <div id="prev-main">
-      <div class="state-msg"><span class="icon">⏳</span>Previous alerts load from archive…</div>
+      <div class="state-msg"><span class="icon">⏳</span>Loading previous alerts…</div>
     </div>
   </div>
 
@@ -732,6 +734,113 @@
     URL.revokeObjectURL(url);
   }
 
+  // ── Tab switching ────────────────────────────────────────────────────────────────
+  let currentTab = 'today';
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('panel-today').style.display    = tab === 'today'    ? '' : 'none';
+    document.getElementById('panel-previous').style.display = tab === 'previous' ? '' : 'none';
+    document.getElementById('tab-today').classList.toggle('active',    tab === 'today');
+    document.getElementById('tab-previous').classList.toggle('active', tab === 'previous');
+    const dl = document.getElementById('downloadSection');
+    if (dl) dl.style.display = (tab === 'today' && archiveAlerts.length > 0) ? 'block' : 'none';
+    if (tab === 'previous') renderPreviousAlerts();
+  }
+
+  // ── Previous alerts ───────────────────────────────────────────────────────────
+  function renderPreviousAlerts() {
+    const container = document.getElementById('prev-main');
+
+    if (archiveAlerts.length === 0) {
+      container.innerHTML =
+        '<div class="state-msg"><span class="icon">📦</span>No archived data yet — previous alerts will appear here once the daily archive has been running for at least one day.</div>';
+      return;
+    }
+
+    const today = todayISO();
+
+    // Group by feature_id (or community|province fallback)
+    const groups = {};
+    for (const a of archiveAlerts) {
+      const key = a.feature_id || (a.community + '|' + a.province);
+      if (!groups[key]) {
+        groups[key] = {
+          key,
+          community:  a.community,
+          province:   a.province,
+          colour:     a.colour,
+          alert_type: a.alert_type,
+          dates:      [],
+        };
+      }
+      groups[key].dates.push(a.date);
+      // Track highest colour seen
+      const RANK = { red: 3, orange: 2, yellow: 1 };
+      if ((RANK[(a.colour || '').toLowerCase()] || 0) > (RANK[(groups[key].colour || '').toLowerCase()] || 0)) {
+        groups[key].colour = a.colour;
+      }
+    }
+
+    // Mark which feature_ids are active today
+    const todayFids = new Set(todayAlerts.map(a => a.feature_id || (a.community + '|' + a.province)));
+
+    const rows = Object.values(groups).map(g => {
+      g.dates = [...new Set(g.dates)].sort();
+      g.firstDate = g.dates[0];
+      g.lastDate  = g.dates[g.dates.length - 1];
+      g.isActive  = todayFids.has(g.key) || g.lastDate === today;
+      return g;
+    });
+
+    // Sort: active first, then most recent, then community
+    rows.sort((a, b) => {
+      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+      if (b.lastDate !== a.lastDate) return b.lastDate.localeCompare(a.lastDate);
+      return a.community.localeCompare(b.community);
+    });
+
+    if (rows.length === 0) {
+      container.innerHTML = '<div class="state-msg"><span class="icon">📭</span>No previous alerts in archive.</div>';
+      return;
+    }
+
+    const tableRows = rows.map(g => {
+      const dateRange = g.firstDate === g.lastDate
+        ? fmtDateShort(g.firstDate)
+        : `${fmtDateShort(g.firstDate)} – ${fmtDateShort(g.lastDate)}`;
+      const activeBadge = g.isActive ? ' <span class="active-badge">● active</span>' : '';
+      return `
+        <tr>
+          <td>${colourPill(g.colour)}</td>
+          <td class="community-cell">${esc(g.community)}<br><span class="pt">${esc(g.province)}</span></td>
+          <td class="mono">${esc(dateRange)}${activeBadge}</td>
+          <td class="mono">${g.dates.length} day${g.dates.length !== 1 ? 's' : ''}</td>
+        </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="prev-table-wrap">
+        <table>
+          <thead><tr>
+            <th>Level</th>
+            <th>Community / PT</th>
+            <th>Date Range</th>
+            <th>Days in Archive</th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function fmtDateShort(dateStr) {
+    if (!dateStr) return '—';
+    try {
+      const d = new Date(dateStr + 'T12:00:00');
+      return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch { return dateStr; }
+  }
+
   // ── UI helpers ────────────────────────────────────────────────────────────────
   function setRefreshSpinning(on) {
     const btn = document.getElementById('refreshBtn');
@@ -760,3 +869,5 @@
 </script>
 </body>
 </html>
+
+ 
