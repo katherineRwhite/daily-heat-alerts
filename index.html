@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -154,6 +153,25 @@
   }
   .summary-none { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
 
+  /* ── Air quality pill ── */
+  .aq-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; font-weight: 500;
+    padding: 3px 8px; border: 1px solid; border-radius: 2px; white-space: nowrap; text-transform: capitalize;
+  }
+  .aq-pill .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .aq-yellow { color: #b45309; background: #fffbeb; border-color: #fcd34d; }
+  .aq-yellow .dot { background: #f59e0b; }
+  .aq-orange { color: #c2410c; background: #fff7ed; border-color: #fb923c; }
+  .aq-orange .dot { background: #f97316; }
+  .aq-red    { color: #b91c1c; background: #fff1f2; border-color: #fca5a5; }
+  .aq-red .dot    { background: #ef4444; }
+  .aq-default { color: #475569; background: #f8fafc; border-color: #cbd5e1; }
+  .aq-default .dot { background: #94a3b8; }
+  td.aq-cell { min-width: 140px; vertical-align: top; }
+  .aq-none { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .aq-type { font-size: 0.76rem; color: #4a3a30; margin-top: 4px; display: block; }
+
   /* ── Summary layout ── */
   .summary-body {
     display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
@@ -179,6 +197,53 @@
   input[type="date"]:focus { border-color: var(--text); }
   .archive-count { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--muted); margin-left: 4px; }
 
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--text);
+    margin-bottom: 24px;
+  }
+  .tab-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 10px 22px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); background: none; }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--text); background: none; }
+
+  /* ── Previous alerts table ── */
+  .prev-table-wrap { overflow-x: auto; border: 1.5px solid var(--border); }
+  .prev-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .prev-table-wrap thead { background: var(--text); color: var(--bg); }
+  .prev-table-wrap thead th {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 10px 14px; text-align: left; white-space: nowrap;
+  }
+  .prev-table-wrap tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .prev-table-wrap tbody tr:last-child { border-bottom: none; }
+  .prev-table-wrap tbody tr:hover { background: #faf5ef; }
+  .prev-table-wrap td { padding: 11px 14px; vertical-align: middle; line-height: 1.4; }
+  .prev-table-wrap td.mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+  .prev-table-wrap td.community-cell { min-width: 160px; max-width: 220px; font-size: 0.85rem; }
+  .prev-table-wrap td.community-cell .pt { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--muted); }
+  .active-badge {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: #f0fdf4; color: #166534; border: 1px solid #86efac;
+    padding: 2px 7px; border-radius: 2px; white-space: nowrap; margin-left: 6px;
+  }
+
   /* ── Footer ── */
   footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); line-height: 2; }
   footer a { color: var(--muted); }
@@ -190,8 +255,8 @@
   <header>
     <div class="logo">
 <div class="logo-text">
-        <h1>Heat warnings today in Canada</h1>
-        <p>Environment &amp; Climate Change Canada daily data tracking</p>
+        <h1>Canada Daily Heat Alerts</h1>
+        <p>Environment &amp; Climate Change Canada · Heat warnings only</p>
       </div>
     </div>
     <div class="header-actions">
@@ -207,6 +272,12 @@
   <div class="status-row">
     <span class="date-label" id="dateLabel">—</span>
     <span class="source-tag" id="sourceTag"></span>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-today" onclick="switchTab('today')">Today's Alerts</button>
+    <button class="tab-btn" id="tab-previous" onclick="switchTab('previous')">Previous Alerts</button>
   </div>
 
   <div id="fallbackNotice" class="notice warn">
@@ -229,8 +300,16 @@
     </div>
   </div>
 
-  <div id="main">
-    <div class="state-msg"><span class="icon">⏳</span>Loading heat alerts…</div>
+  <div id="panel-today">
+    <div id="main">
+      <div class="state-msg"><span class="icon">⏳</span>Loading heat alerts…</div>
+    </div>
+  </div>
+
+  <div id="panel-previous" style="display:none">
+    <div id="prev-main">
+      <div class="state-msg"><span class="icon">⏳</span>Previous alerts load from archive…</div>
+    </div>
   </div>
 
   <!-- Download section at bottom -->
@@ -253,7 +332,8 @@
 
   <footer>
     Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
-    Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory<br>
+    Archived daily by GitHub Actions · Falls back to live GeoMet API if archive unavailable<br>
+    Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory &nbsp;·&nbsp; AQ = Air Quality<br>
     * Earliest date recorded in archive — may not reflect the original issue date
   </footer>
 
@@ -264,6 +344,9 @@
   let usingArchive  = false;
 
   const HEAT_PATTERN = /heat|humidex|canicule|chaleur/i;
+  const AQ_PATTERN   = /air quality|smog|qualité de l.air/i;
+
+  let aqAlerts = [];  // live air quality alerts, keyed by feature_id
   const COLOUR_ORDER = { red: 0, orange: 1, yellow: 2 };
   const STOP_PHRASES = [
     "Take action to protect", "Watch for the early signs",
@@ -362,6 +445,12 @@
     const c = (colour || '').toLowerCase().trim();
     const cls = c === 'red' ? 'pill-red' : c === 'orange' ? 'pill-orange' : c === 'yellow' ? 'pill-yellow' : 'pill-default';
     return `<span class="colour-pill ${cls}"><span class="dot"></span>${esc(colour || 'unknown')}</span>`;
+  }
+
+  function aqPill(colour, alertType) {
+    const c = (colour || '').toLowerCase().trim();
+    const cls = c === 'red' ? 'aq-red' : c === 'orange' ? 'aq-orange' : c === 'yellow' ? 'aq-yellow' : 'aq-default';
+    return `<span class="aq-pill ${cls}"><span class="dot"></span>${esc(colour || '?')}</span>`;
   }
 
   function statusPill(status) {
@@ -471,9 +560,28 @@
         .filter(a => HEAT_PATTERN.test(a.alert_type))
     );
 
+    // Build AQ lookup: feature_id → highest-severity AQ alert
+    const COLOUR_RANK = { red: 3, orange: 2, yellow: 1 };
+    const aqMap = {};
+    for (const f of (data.features || [])) {
+      const p = f.properties || {};
+      if (!AQ_PATTERN.test(p.alert_name_en || '')) continue;
+      const fid = p.feature_id || '';
+      if (!fid) continue;
+      const col = (p.risk_colour_en || '').toLowerCase();
+      if (!aqMap[fid] || (COLOUR_RANK[col] || 0) > (COLOUR_RANK[(aqMap[fid].colour || '').toLowerCase()] || 0)) {
+        aqMap[fid] = {
+          colour:     p.risk_colour_en || '',
+          alert_type: p.alert_name_en  || '',
+        };
+      }
+    }
+    aqAlerts = aqMap;
+
     setSourceTag('live', '🔴 Live — GeoMet API');
     setDateLabel(today);
     renderTable(todayAlerts);
+    if (currentTab === 'previous') renderPreviousAlerts();
     // Note: archive download section is set up by init() after this resolves
   }
 
@@ -548,6 +656,11 @@
         </td>
         <td class="time-cell">${fmtValidityTime(a.validity_datetime || a.issued)}</td>
         <td class="duration-cell">${durCell}${firstDt ? `<span class="first-issued-sub">(${esc(firstDt)})*</span>` : ''}</td>
+        <td class="aq-cell">${(() => {
+          const aq = aqAlerts[a.feature_id];
+          if (!aq) return '<span class="aq-none">—</span>';
+          return aqPill(aq.colour) + '<span class="aq-type">' + esc(aq.alert_type) + '</span>';
+        })()}</td>
         <td class="meta-cell">
           <div class="meta-line"><span class="meta-label">Impact: </span>${esc(a.impact || '—')}</div>
           <div class="meta-line"><span class="meta-label">Confidence: </span>${esc(a.confidence || '—')}</div>
@@ -565,6 +678,7 @@
             <th>Community / PT</th>
             <th>Effective Time</th>
             <th>Active For *</th>
+            <th>Co-occurring AQ Alert</th>
             <th>Impact &amp; Confidence</th>
             <th>Details</th>
           </tr></thead>
