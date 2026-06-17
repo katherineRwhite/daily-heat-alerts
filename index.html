@@ -269,9 +269,9 @@
   }
   .density-custom label { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
   .density-wrap {
-    display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
+  display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
   }
-  .density-map-wrap { flex: 0 0 520px; }
+  .density-map-wrap { flex: 1 1 680px; min-width: 320px; }
   .density-map { width: 100%; height: auto; display: block; }
   .density-map .pt-shape {
     stroke: #c8b8a8; stroke-width: 0.8; transition: fill 0.4s;
@@ -283,7 +283,7 @@
     text-anchor: middle; pointer-events: none; font-weight: 500;
     fill: #7a6a5a;
   }
-  .density-sidebar { flex: 1; min-width: 180px; }
+  .density-sidebar { flex: 0 0 220px; }
   .density-legend { margin-bottom: 24px; }
   .density-legend-title {
     font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
@@ -411,7 +411,7 @@
       </div>
     </div>
 
-    <div id="density-main">
+     <div id="density-main">
       <div class="density-wrap">
         <div class="density-map-wrap">
           <p class="density-period-label" id="density-period">—</p>
@@ -420,6 +420,12 @@
           </div>
         </div>
         <div class="density-sidebar">
+          <table class="density-table">
+            <thead><tr><th>PT</th><th>Alert-days</th></tr></thead>
+            <tbody id="density-table-body">
+              <tr><td colspan="2" style="color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:0.72rem">Select a period above</td></tr>
+            </tbody>
+          </table>
           <div class="density-legend">
             <div class="density-legend-title">Alert-days</div>
             <div class="legend-row"><span class="legend-swatch" style="background:#f0e8df"></span>None</div>
@@ -429,17 +435,11 @@
             <div class="legend-row"><span class="legend-swatch" style="background:#f97316"></span>11–20 days</div>
             <div class="legend-row"><span class="legend-swatch" style="background:#dc2626"></span>20+ days</div>
           </div>
-          <table class="density-table">
-            <thead><tr><th>PT</th><th>Alert-days</th></tr></thead>
-            <tbody id="density-table-body">
-              <tr><td colspan="2" style="color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:0.72rem">Select a period above</td></tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
   </div>
-
+ 
   <!-- Download section at bottom -->
   <div class="download-section" id="downloadSection">
     <h2>Download CSV Archive</h2>
@@ -457,23 +457,23 @@
       <span class="archive-count" id="archiveCount"></span>
     </div>
   </div>
-
+ 
   <footer>
     Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
     Archived daily by GitHub Actions · Falls back to live GeoMet API if archive unavailable<br>
     Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory &nbsp;·&nbsp; AQ = Air Quality<br>
     * Earliest date recorded in archive — may not reflect the original issue date
   </footer>
-
+ 
 </div>
 <script>
   let todayAlerts   = [];
   let archiveAlerts = [];
   let usingArchive  = false;
-
+ 
   const HEAT_PATTERN = /heat|humidex|canicule|chaleur/i;
   const AQ_PATTERN   = /air quality|smog|qualité de l.air/i;
-
+ 
   let aqAlerts = [];  // live air quality alerts, keyed by feature_id
   const COLOUR_ORDER = { red: 0, orange: 1, yellow: 2 };
   const STOP_PHRASES = [
@@ -482,9 +482,9 @@
     "Plan and schedule", "Extreme heat affects", "Never leave people",
     "For more information", "Please continue to monitor",
   ];
-
+ 
   function stripHtml(s) { return (s || '').replace(/<[^>]+>/g, '').trim(); }
-
+ 
   function extractDetail(text) {
     let out = (text || '').trim();
     for (const p of STOP_PHRASES) {
@@ -493,7 +493,7 @@
     }
     return out.replace(/\n{3,}/g, '\n\n').trim();
   }
-
+ 
   // Format validity_datetime with time on line 1, date on line 2
   function fmtValidityTime(s) {
     if (!s) return '<span class="time-line">—</span>';
@@ -509,14 +509,14 @@
       return `<span class="time-line">${esc(time)}</span><span class="time-line" style="margin-top:2px">${esc(weekday + ' ' + day + ' ' + month + ' ' + year)}</span>`;
     } catch { return `<span class="time-line">${esc(s)}</span>`; }
   }
-
+ 
   // archiveHasPriorDay: true once data.json has entries from before today.
   let archiveHasPriorDay = false;
-
+ 
   // Build a lookup: feature_id → earliest date seen in archive (any status).
   // Used for "Active For" (days) and "First Issued" (date label).
   let firstSeenLookup = {};
-
+ 
   function buildFirstIssuedLookup() {
     firstSeenLookup = {};
     for (const a of archiveAlerts) {
@@ -527,7 +527,7 @@
       }
     }
   }
-
+ 
   // "Active For": calendar days from the earliest archived date for this feature to today.
   // Only shown for continued alerts when archive has a prior day.
   function activeDuration(alert) {
@@ -544,7 +544,7 @@
       return `${days} day${days !== 1 ? 's' : ''}`;
     } catch { return null; }
   }
-
+ 
   // "First Issued": earliest date seen in archive for this feature.
   // Only shown for continued alerts when archive has a prior day.
   function firstIssuedDate(alert) {
@@ -558,9 +558,9 @@
       return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch { return date; }
   }
-
+ 
   function todayISO() { return new Date().toLocaleDateString('en-CA'); }
-
+ 
   function sortAlerts(arr) {
     return [...arr].sort((a, b) => {
       const oa = COLOUR_ORDER[(a.colour || '').toLowerCase()] ?? 9;
@@ -568,19 +568,19 @@
       return oa !== ob ? oa - ob : (a.province || '').localeCompare(b.province || '');
     });
   }
-
+ 
   function colourPill(colour) {
     const c = (colour || '').toLowerCase().trim();
     const cls = c === 'red' ? 'pill-red' : c === 'orange' ? 'pill-orange' : c === 'yellow' ? 'pill-yellow' : 'pill-default';
     return `<span class="colour-pill ${cls}"><span class="dot"></span>${esc(colour || 'unknown')}</span>`;
   }
-
+ 
   function aqPill(colour, alertType) {
     const c = (colour || '').toLowerCase().trim();
     const cls = c === 'red' ? 'aq-red' : c === 'orange' ? 'aq-orange' : c === 'yellow' ? 'aq-yellow' : 'aq-default';
     return `<span class="aq-pill ${cls}"><span class="dot"></span>${esc(colour || '?')}</span>`;
   }
-
+ 
   function statusPill(status) {
     const s = (status || '').toLowerCase();
     if (s === 'issued') {
@@ -588,27 +588,27 @@
     }
     return `<span class="status-pill status-cont">Continued</span>`;
   }
-
+ 
   function esc(s) {
     return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-
+ 
   // ── Data loading ─────────────────────────────────────────────────────────────
   // Strategy:
   //   1. Always fetch today live from GeoMet (most up-to-date effective times)
   //   2. In parallel, load data.json for the historical archive (date-range download)
   //   3. If GeoMet fails, fall back to today's slice from data.json
   //   4. If both fail, show an error
-
+ 
   async function init() {
     setRefreshSpinning(true);
     hideError(); hideFallbackNotice();
-
+ 
     const [liveResult, archiveResult] = await Promise.allSettled([
       loadLive(),
       tryLoadArchive(),
     ]);
-
+ 
     if (liveResult.status === 'fulfilled') {
       // Live succeeded — show archive download if available
       if (archiveResult.status === 'fulfilled' && archiveResult.value) {
@@ -630,10 +630,10 @@
           '<div class="state-msg"><span class="icon">⚠️</span>Failed to load data. See error above.</div>';
       }
     }
-
+ 
     setRefreshSpinning(false);
   }
-
+ 
   async function tryLoadArchive() {
     try {
       const res = await fetch('data.json?nocache=' + Date.now());
@@ -653,16 +653,16 @@
       return false;
     }
   }
-
+ 
   async function loadLive() {
     document.getElementById('main').innerHTML =
       '<div class="state-msg"><span class="icon">⏳</span>Fetching live heat alerts from GeoMet…</div>';
-
+ 
     const res = await fetch('https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const today = todayISO();
-
+ 
     todayAlerts = sortAlerts(
       (data.features || [])
         .map(f => {
@@ -687,7 +687,7 @@
         })
         .filter(a => HEAT_PATTERN.test(a.alert_type))
     );
-
+ 
     // Build AQ lookup: feature_id → highest-severity AQ alert
     const COLOUR_RANK = { red: 3, orange: 2, yellow: 1 };
     const aqMap = {};
@@ -705,18 +705,18 @@
       }
     }
     aqAlerts = aqMap;
-
+ 
     setSourceTag('live', '🔴 Live — GeoMet API');
     setDateLabel(today);
     renderTable(todayAlerts);
     if (currentTab === 'previous') renderPreviousAlerts();
     // Note: archive download section is set up by init() after this resolves
   }
-
+ 
   // ── Summary box ──────────────────────────────────────────────────────────────
   function renderSummary(alerts) {
     const box = document.getElementById('summaryBox');
-
+ 
     if (alerts.length === 0) {
       box.className = 'summary-box';
       box.style.display = 'block';
@@ -726,10 +726,10 @@
         '<span class="summary-none">No active heat alerts in Canada right now.</span>';
       return;
     }
-
+ 
     const newCount  = alerts.filter(a => (a.status || '').toLowerCase() === 'issued').length;
     const contCount = alerts.filter(a => (a.status || '').toLowerCase() === 'continued').length;
-
+ 
     // Unique provinces, sorted
     const PROV_ORDER = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
     const provinces = [...new Set(alerts.map(a => a.province).filter(Boolean))];
@@ -741,24 +741,24 @@
       if (ib === -1) return -1;
       return ia - ib;
     });
-
+ 
     box.className = 'summary-box has-alerts';
     box.style.display = 'block';
-
+ 
     document.getElementById('summaryTotal').innerHTML =
       `${alerts.length}<span>active heat alert${alerts.length !== 1 ? 's' : ''}</span>`;
-
+ 
     const pills = [];
     if (newCount  > 0) pills.push(`<span class="summary-pill new">★ ${newCount} new</span>`);
     if (contCount > 0) pills.push(`<span class="summary-pill cont">${contCount} continued</span>`);
     document.getElementById('summaryPills').innerHTML = pills.join('');
-
+ 
     const provTags = provinces.map(p => `<span class="prov-tag">${esc(p)}</span>`).join('');
     document.getElementById('summaryProvinces').innerHTML =
       `<span class="summary-prov-label">PT affected:</span>${provTags}`;
-
+ 
   }
-
+ 
   // ── Render table ─────────────────────────────────────────────────────────────
   function renderTable(alerts) {
     renderSummary(alerts);
@@ -767,14 +767,14 @@
       container.innerHTML = '<div class="state-msg"><span class="icon">✅</span>No active heat alerts for this date.</div>';
       return;
     }
-
+ 
     const rows = alerts.map(a => {
       const dur     = activeDuration(a);
       const firstDt = firstIssuedDate(a);
       const durCell = dur
         ? `<span class="duration-val">${esc(dur)}</span>`
         : `<span class="duration-na">—</span>`;
-
+ 
       return `
       <tr>
         <td>${colourPill(a.colour)}</td>
@@ -795,7 +795,7 @@
         <td class="detail-cell"><div class="detail-text">${esc(a.detail || a.alert_text || '')}</div></td>
       </tr>`;
     }).join('');
-
+ 
     container.innerHTML = `
       <div class="table-wrap">
         <table>
@@ -812,39 +812,39 @@
         </table>
       </div>`;
   }
-
+ 
   // ── Download section ──────────────────────────────────────────────────────────
   function setupDownloadSection(all) {
     const dates = [...new Set(all.map(a => a.date))].sort();
     if (dates.length === 0) { hideDownloadSection(); return; }
-
+ 
     const section = document.getElementById('downloadSection');
     section.style.display = 'block';
-
+ 
     const fromEl = document.getElementById('dateFrom');
     const toEl   = document.getElementById('dateTo');
     fromEl.min = toEl.min = dates[0];
     fromEl.max = toEl.max = dates[dates.length - 1];
     fromEl.value = dates[0];
     toEl.value   = dates[dates.length - 1];
-
+ 
     const unique = dates.length;
     document.getElementById('archiveCount').textContent =
       `${unique} day${unique !== 1 ? 's' : ''} archived · ${all.length} records`;
   }
-
+ 
   function hideDownloadSection() {
     document.getElementById('downloadSection').style.display = 'none';
   }
-
+ 
   function downloadRangeCSV() {
     const from = document.getElementById('dateFrom').value;
     const to   = document.getElementById('dateTo').value;
     if (!from || !to) return;
-
+ 
     const rows = archiveAlerts.filter(a => a.date >= from && a.date <= to);
     if (rows.length === 0) { alert('No alerts found in that date range.'); return; }
-
+ 
     const fields = ['date','colour','community','province','status','validity_datetime','issued','expires','impact','confidence','alert_text'];
     const csvEsc = v => {
       const s = String(v ?? '').replace(/"/g, '""');
@@ -857,10 +857,10 @@
     a.href = url; a.download = `heat_alerts_${from}_to_${to}.csv`; a.click();
     URL.revokeObjectURL(url);
   }
-
+ 
   // ── Tab switching ────────────────────────────────────────────────────────────────
   let currentTab = 'today';
-
+ 
   function switchTab(tab) {
     currentTab = tab;
     document.getElementById('panel-today').style.display    = tab === 'today'    ? '' : 'none';
@@ -874,19 +874,19 @@
     if (tab === 'previous') renderPreviousAlerts();
     if (tab === 'density')  renderDensity();
   }
-
+ 
   // ── Previous alerts ───────────────────────────────────────────────────────────
   function renderPreviousAlerts() {
     const container = document.getElementById('prev-main');
-
+ 
     if (archiveAlerts.length === 0) {
       container.innerHTML =
         '<div class="state-msg"><span class="icon">📦</span>No archived data yet — previous alerts will appear here once the daily archive has been running for at least one day.</div>';
       return;
     }
-
+ 
     const today = todayISO();
-
+ 
     // Group by feature_id (or community|province fallback)
     const groups = {};
     for (const a of archiveAlerts) {
@@ -915,10 +915,10 @@
         groups[key].colour = a.colour;
       }
     }
-
+ 
     // Mark which feature_ids are active today
     const todayFids = new Set(todayAlerts.map(a => a.feature_id || (a.community + '|' + a.province)));
-
+ 
     const rows = Object.values(groups).map(g => {
       g.dates = [...new Set(g.dates)].sort();
       g.firstDate = g.dates[0];
@@ -926,19 +926,19 @@
       g.isActive  = todayFids.has(g.key) || g.lastDate === today;
       return g;
     });
-
+ 
     // Sort: active first, then most recent, then community
     rows.sort((a, b) => {
       if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
       if (b.lastDate !== a.lastDate) return b.lastDate.localeCompare(a.lastDate);
       return a.community.localeCompare(b.community);
     });
-
+ 
     if (rows.length === 0) {
       container.innerHTML = '<div class="state-msg"><span class="icon">📭</span>No previous alerts in archive.</div>';
       return;
     }
-
+ 
     const tableRows = rows.map(g => {
       const dateRange = g.firstDate === g.lastDate
         ? fmtDateShort(g.firstDate)
@@ -956,7 +956,7 @@
           <td class="aq-cell">${aqCell}</td>
         </tr>`;
     }).join('');
-
+ 
     container.innerHTML = `
       <div class="prev-table-wrap">
         <table>
@@ -971,7 +971,7 @@
         </table>
       </div>`;
   }
-
+ 
   function fmtDateShort(dateStr) {
     if (!dateStr) return '—';
     try {
@@ -979,20 +979,20 @@
       return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch { return dateStr; }
   }
-
-
+ 
+ 
   // ── Density map ──────────────────────────────────────────────────────────────
   let currentPeriod = 'summer2026';
   let topoLoaded    = false;
   let topoData      = null;
-
+ 
   // PRUID → two-letter PT code (Stats Can numeric codes)
   const PRUID_TO_PT = {
     '10': 'NL', '11': 'PE', '12': 'NS', '13': 'NB',
     '24': 'QC', '35': 'ON', '46': 'MB', '47': 'SK',
     '48': 'AB', '59': 'BC', '60': 'YT', '61': 'NT', '62': 'NU'
   };
-
+ 
   function densityColour(days) {
     if (!days || days === 0) return '#f0e8df';
     if (days <= 2)  return '#fef3c7';
@@ -1001,7 +1001,7 @@
     if (days <= 20) return '#f97316';
     return '#dc2626';
   }
-
+ 
   function getPeriodDates(period) {
     const today = todayISO();
     if (period === 'summer2026') return { from: '2026-06-01', to: '2026-08-31' };
@@ -1018,7 +1018,7 @@
     }
     return { from: '2026-06-01', to: today };
   }
-
+ 
   function setPeriod(period, btn) {
     currentPeriod = period;
     document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
@@ -1026,7 +1026,7 @@
     document.getElementById('densityCustom').style.display = period === 'custom' ? 'flex' : 'none';
     if (period !== 'custom') renderDensity();
   }
-
+ 
   async function loadTopoIfNeeded() {
     if (topoLoaded) return true;
     try {
@@ -1040,16 +1040,16 @@
       return false;
     }
   }
-
+ 
   async function renderDensity() {
     if (archiveAlerts.length === 0) {
       document.getElementById('density-map-container').innerHTML =
         '<div class="state-msg"><span class="icon">📦</span>No archived data yet — density map will populate as the daily archive builds.</div>';
       return;
     }
-
+ 
     const { from, to } = getPeriodDates(currentPeriod);
-
+ 
     // Count unique alert-days per PT
     const ptDays = {};
     const seen   = new Set();
@@ -1061,12 +1061,12 @@
         ptDays[a.province] = (ptDays[a.province] || 0) + 1;
       }
     }
-
+ 
     // Period label
     const toDisplay = to > todayISO() ? todayISO() : to;
     document.getElementById('density-period').textContent =
       fmtDateShort(from) + ' – ' + fmtDateShort(toDisplay);
-
+ 
     // Sidebar table
     const ALL_PTS = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
     const tableRows = ALL_PTS
@@ -1076,36 +1076,36 @@
       .join('');
     document.getElementById('density-table-body').innerHTML = tableRows ||
       '<tr><td colspan="2" style="color:var(--muted);font-family:IBM Plex Mono,monospace;font-size:0.72rem">No heat warnings in this period</td></tr>';
-
+ 
     // Load TopoJSON and draw map with D3
     const ok = await loadTopoIfNeeded();
     const container = document.getElementById('density-map-container');
-
+ 
     if (!ok || !topoData) {
       container.innerHTML =
         '<div class="state-msg"><span class="icon">⚠️</span>Could not load canada-provinces.json — make sure it is committed to your repo root.</div>';
       return;
     }
-
+ 
     container.innerHTML = '';
     const width  = container.offsetWidth || 700;
     const height = Math.round(width * 0.62);
-
+ 
     const svg = d3.select(container).append('svg')
       .attr('viewBox', '0 0 ' + width + ' ' + height)
       .style('width', '100%')
       .style('display', 'block');
-
+ 
     const objKey   = Object.keys(topoData.objects)[0];
     const features = topojson.feature(topoData, topoData.objects[objKey]).features;
-
+ 
     const projection = d3.geoConicConformal()
       .parallels([49, 77])
       .rotate([96, -60])
       .fitSize([width, height], { type: 'FeatureCollection', features });
-
+ 
     const path = d3.geoPath(projection);
-
+ 
     svg.selectAll('path.province')
       .data(features)
       .join('path')
@@ -1120,7 +1120,7 @@
         const days = ptDays[pt] || 0;
         return (d.properties.PRENAME || pt) + ': ' + days + ' alert-day' + (days !== 1 ? 's' : '');
       });
-
+ 
     svg.selectAll('text.pt-lbl')
       .data(features)
       .join('text')
@@ -1137,8 +1137,8 @@
       .style('pointer-events', 'none')
       .text(d => PRUID_TO_PT[d.properties.PRUID] || '');
   }
-
-
+ 
+ 
   // ── UI helpers ────────────────────────────────────────────────────────────────
   function setRefreshSpinning(on) {
     const btn = document.getElementById('refreshBtn');
@@ -1162,10 +1162,11 @@
   function hideFallbackNotice() { document.getElementById('fallbackNotice').style.display = 'none'; }
   function showError(msg) { const el = document.getElementById('errorBanner'); el.textContent = '⚠ ' + msg; el.style.display = 'block'; }
   function hideError() { document.getElementById('errorBanner').style.display = 'none'; }
-
+ 
   init();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 </body>
 </html>
+ 
