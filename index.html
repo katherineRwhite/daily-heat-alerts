@@ -244,6 +244,84 @@
     padding: 2px 7px; border-radius: 2px; white-space: nowrap; margin-left: 6px;
   }
 
+  /* ── Density tab ── */
+  .density-controls {
+    margin-bottom: 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .density-presets {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .density-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+    color: var(--muted); letter-spacing: 0.05em; margin-right: 4px;
+  }
+  .period-btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+    padding: 6px 14px; border: 1.5px solid var(--border);
+    background: none; color: var(--muted); cursor: pointer;
+    transition: all 0.15s; letter-spacing: 0.03em;
+  }
+  .period-btn:hover { border-color: var(--text); color: var(--text); background: none; }
+  .period-btn.active { border-color: var(--text); color: var(--text); background: var(--text); color: var(--bg); }
+  .density-custom {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .density-custom label { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .density-wrap {
+    display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .density-map-wrap { flex: 0 0 520px; }
+  .density-map { width: 100%; height: auto; display: block; }
+  .density-map .pt-shape {
+    stroke: #c8b8a8; stroke-width: 0.8; transition: fill 0.4s;
+    cursor: default;
+  }
+  .density-map .pt-shape:hover { stroke: #7a4a20; stroke-width: 1.5; }
+  .density-map .pt-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 7px;
+    text-anchor: middle; pointer-events: none; font-weight: 500;
+    fill: #7a6a5a;
+  }
+  .density-sidebar { flex: 1; min-width: 180px; }
+  .density-legend { margin-bottom: 24px; }
+  .density-legend-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+    color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .legend-row {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .legend-swatch {
+    width: 20px; height: 14px; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;
+  }
+  .density-table { width: 100%; border-collapse: collapse; }
+  .density-table th {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+    font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--text);
+    white-space: nowrap;
+  }
+  .density-table td {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+    padding: 7px 10px; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .density-table tr:last-child td { border-bottom: none; }
+  .density-table tr:hover td { background: #faf5ef; }
+  .pt-swatch {
+    display: inline-block; width: 12px; height: 12px;
+    border: 1px solid rgba(0,0,0,0.15); margin-right: 6px;
+    vertical-align: middle; border-radius: 2px;
+  }
+  .density-period-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+    color: var(--muted); margin-bottom: 16px;
+  }
+
   /* ── Footer ── */
   footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); line-height: 2; }
   footer a { color: var(--muted); }
@@ -255,8 +333,8 @@
   <header>
     <div class="logo">
 <div class="logo-text">
-        <h1>Today's heat warnings across Canada</h1>
-        <p>Environment &amp; Climate Change Canada heat (and co-occuring AQ) warnings</p>
+        <h1>Canada Daily Heat Alerts</h1>
+        <p>Environment &amp; Climate Change Canada · Heat warnings only</p>
       </div>
     </div>
     <div class="header-actions">
@@ -278,6 +356,7 @@
   <div class="tabs">
     <button class="tab-btn active" id="tab-today" onclick="switchTab('today')">Today's Alerts</button>
     <button class="tab-btn" id="tab-previous" onclick="switchTab('previous')">Previous Alerts</button>
+    <button class="tab-btn" id="tab-density" onclick="switchTab('density')">Heat Warning Density</button>
   </div>
 
   <div id="panel-today">
@@ -314,6 +393,53 @@
     </div>
   </div>
 
+  <div id="panel-density" style="display:none">
+    <div class="density-controls">
+      <div class="density-presets">
+        <span class="density-label">Period:</span>
+        <button class="period-btn active" onclick="setPeriod('summer2026', this)">Summer 2026</button>
+        <button class="period-btn" onclick="setPeriod('30days', this)">Last 30 days</button>
+        <button class="period-btn" onclick="setPeriod('alltime', this)">All time</button>
+        <button class="period-btn" onclick="setPeriod('custom', this)">Custom</button>
+      </div>
+      <div class="density-custom" id="densityCustom" style="display:none">
+        <label>From</label>
+        <input type="date" id="densityFrom">
+        <label>to</label>
+        <input type="date" id="densityTo">
+        <button onclick="renderDensity()">Apply</button>
+      </div>
+    </div>
+
+    <div id="density-main">
+      <div class="density-wrap">
+        <div class="density-map-wrap">
+          <p class="density-period-label" id="density-period">—</p>
+          <div id="density-map-container">
+            <div class="state-msg"><span class="icon">⏳</span>Loading map…</div>
+          </div>
+        </div>
+        <div class="density-sidebar">
+          <div class="density-legend">
+            <div class="density-legend-title">Alert-days</div>
+            <div class="legend-row"><span class="legend-swatch" style="background:#f0e8df"></span>None</div>
+            <div class="legend-row"><span class="legend-swatch" style="background:#fef3c7"></span>1–2 days</div>
+            <div class="legend-row"><span class="legend-swatch" style="background:#fde68a"></span>3–5 days</div>
+            <div class="legend-row"><span class="legend-swatch" style="background:#fbbf24"></span>6–10 days</div>
+            <div class="legend-row"><span class="legend-swatch" style="background:#f97316"></span>11–20 days</div>
+            <div class="legend-row"><span class="legend-swatch" style="background:#dc2626"></span>20+ days</div>
+          </div>
+          <table class="density-table">
+            <thead><tr><th>PT</th><th>Alert-days</th></tr></thead>
+            <tbody id="density-table-body">
+              <tr><td colspan="2" style="color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:0.72rem">Select a period above</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Download section at bottom -->
   <div class="download-section" id="downloadSection">
     <h2>Download CSV Archive</h2>
@@ -334,8 +460,9 @@
 
   <footer>
     Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
+    Archived daily by GitHub Actions · Falls back to live GeoMet API if archive unavailable<br>
     Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory &nbsp;·&nbsp; AQ = Air Quality<br>
-    * Earliest date recorded in current data archive — may not reflect the original issue date
+    * Earliest date recorded in archive — may not reflect the original issue date
   </footer>
 
 </div>
@@ -738,11 +865,14 @@
     currentTab = tab;
     document.getElementById('panel-today').style.display    = tab === 'today'    ? '' : 'none';
     document.getElementById('panel-previous').style.display = tab === 'previous' ? '' : 'none';
-    document.getElementById('tab-today').classList.toggle('active',    tab === 'today');
-    document.getElementById('tab-previous').classList.toggle('active', tab === 'previous');
+    document.getElementById('panel-density').style.display  = tab === 'density'  ? '' : 'none';
+    ['today','previous','density'].forEach(t =>
+      document.getElementById('tab-' + t).classList.toggle('active', t === tab)
+    );
     const dl = document.getElementById('downloadSection');
     if (dl) dl.style.display = (tab === 'today' && archiveAlerts.length > 0) ? 'block' : 'none';
     if (tab === 'previous') renderPreviousAlerts();
+    if (tab === 'density')  renderDensity();
   }
 
   // ── Previous alerts ───────────────────────────────────────────────────────────
@@ -850,6 +980,165 @@
     } catch { return dateStr; }
   }
 
+
+  // ── Density map ──────────────────────────────────────────────────────────────
+  let currentPeriod = 'summer2026';
+  let topoLoaded    = false;
+  let topoData      = null;
+
+  // PRUID → two-letter PT code (Stats Can numeric codes)
+  const PRUID_TO_PT = {
+    '10': 'NL', '11': 'PE', '12': 'NS', '13': 'NB',
+    '24': 'QC', '35': 'ON', '46': 'MB', '47': 'SK',
+    '48': 'AB', '59': 'BC', '60': 'YT', '61': 'NT', '62': 'NU'
+  };
+
+  function densityColour(days) {
+    if (!days || days === 0) return '#f0e8df';
+    if (days <= 2)  return '#fef3c7';
+    if (days <= 5)  return '#fde68a';
+    if (days <= 10) return '#fbbf24';
+    if (days <= 20) return '#f97316';
+    return '#dc2626';
+  }
+
+  function getPeriodDates(period) {
+    const today = todayISO();
+    if (period === 'summer2026') return { from: '2026-06-01', to: '2026-08-31' };
+    if (period === 'alltime')    return { from: '2000-01-01', to: today };
+    if (period === '30days') {
+      const d = new Date(); d.setDate(d.getDate() - 30);
+      return { from: d.toLocaleDateString('en-CA'), to: today };
+    }
+    if (period === 'custom') {
+      return {
+        from: document.getElementById('densityFrom').value || '2000-01-01',
+        to:   document.getElementById('densityTo').value   || today,
+      };
+    }
+    return { from: '2026-06-01', to: today };
+  }
+
+  function setPeriod(period, btn) {
+    currentPeriod = period;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById('densityCustom').style.display = period === 'custom' ? 'flex' : 'none';
+    if (period !== 'custom') renderDensity();
+  }
+
+  async function loadTopoIfNeeded() {
+    if (topoLoaded) return true;
+    try {
+      const res = await fetch('canada-provinces.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      topoData   = await res.json();
+      topoLoaded = true;
+      return true;
+    } catch (e) {
+      console.error('Could not load canada-provinces.json:', e);
+      return false;
+    }
+  }
+
+  async function renderDensity() {
+    if (archiveAlerts.length === 0) {
+      document.getElementById('density-map-container').innerHTML =
+        '<div class="state-msg"><span class="icon">📦</span>No archived data yet — density map will populate as the daily archive builds.</div>';
+      return;
+    }
+
+    const { from, to } = getPeriodDates(currentPeriod);
+
+    // Count unique alert-days per PT
+    const ptDays = {};
+    const seen   = new Set();
+    for (const a of archiveAlerts) {
+      if (a.date < from || a.date > to) continue;
+      const key = a.province + '|' + a.date;
+      if (!seen.has(key)) {
+        seen.add(key);
+        ptDays[a.province] = (ptDays[a.province] || 0) + 1;
+      }
+    }
+
+    // Period label
+    const toDisplay = to > todayISO() ? todayISO() : to;
+    document.getElementById('density-period').textContent =
+      fmtDateShort(from) + ' – ' + fmtDateShort(toDisplay);
+
+    // Sidebar table
+    const ALL_PTS = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
+    const tableRows = ALL_PTS
+      .filter(pt => ptDays[pt] > 0)
+      .sort((a, b) => (ptDays[b] || 0) - (ptDays[a] || 0))
+      .map(pt => '<tr><td><span class="pt-swatch" style="background:' + densityColour(ptDays[pt]) + '"></span>' + pt + '</td><td>' + ptDays[pt] + ' day' + (ptDays[pt] !== 1 ? 's' : '') + '</td></tr>')
+      .join('');
+    document.getElementById('density-table-body').innerHTML = tableRows ||
+      '<tr><td colspan="2" style="color:var(--muted);font-family:IBM Plex Mono,monospace;font-size:0.72rem">No heat warnings in this period</td></tr>';
+
+    // Load TopoJSON and draw map with D3
+    const ok = await loadTopoIfNeeded();
+    const container = document.getElementById('density-map-container');
+
+    if (!ok || !topoData) {
+      container.innerHTML =
+        '<div class="state-msg"><span class="icon">⚠️</span>Could not load canada-provinces.json — make sure it is committed to your repo root.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    const width  = container.offsetWidth || 700;
+    const height = Math.round(width * 0.62);
+
+    const svg = d3.select(container).append('svg')
+      .attr('viewBox', '0 0 ' + width + ' ' + height)
+      .style('width', '100%')
+      .style('display', 'block');
+
+    const objKey   = Object.keys(topoData.objects)[0];
+    const features = topojson.feature(topoData, topoData.objects[objKey]).features;
+
+    const projection = d3.geoConicConformal()
+      .parallels([49, 77])
+      .rotate([96, -60])
+      .fitSize([width, height], { type: 'FeatureCollection', features });
+
+    const path = d3.geoPath(projection);
+
+    svg.selectAll('path.province')
+      .data(features)
+      .join('path')
+      .attr('class', 'province')
+      .attr('d', path)
+      .attr('fill', d => densityColour(ptDays[PRUID_TO_PT[d.properties.PRUID]] || 0))
+      .attr('stroke', '#c8b8a8')
+      .attr('stroke-width', 0.7)
+      .append('title')
+      .text(d => {
+        const pt   = PRUID_TO_PT[d.properties.PRUID];
+        const days = ptDays[pt] || 0;
+        return (d.properties.PRENAME || pt) + ': ' + days + ' alert-day' + (days !== 1 ? 's' : '');
+      });
+
+    svg.selectAll('text.pt-lbl')
+      .data(features)
+      .join('text')
+      .attr('class', 'pt-lbl')
+      .attr('transform', d => {
+        const c = path.centroid(d);
+        return (isNaN(c[0]) ? 'translate(-999,-999)' : 'translate(' + c + ')');
+      })
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .style('font-family', 'IBM Plex Mono, monospace')
+      .style('font-size', Math.max(8, Math.round(width / 75)) + 'px')
+      .style('fill', '#5a4a3a')
+      .style('pointer-events', 'none')
+      .text(d => PRUID_TO_PT[d.properties.PRUID] || '');
+  }
+
+
   // ── UI helpers ────────────────────────────────────────────────────────────────
   function setRefreshSpinning(on) {
     const btn = document.getElementById('refreshBtn');
@@ -876,6 +1165,7 @@
 
   init();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 </body>
 </html>
- 
