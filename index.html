@@ -4,83 +4,98 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Canada Daily Heat Alerts</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #fdf8f3;
+    --bg: #fff;
     --surface: #fff;
-    --border: #e8ddd2;
-    --text: #1a1410;
-    --muted: #9a8878;
-    --yellow: #b45309;  --yellow-bg: #fffbeb; --yellow-border: #fcd34d;
-    --orange: #c2410c;  --orange-bg: #fff7ed; --orange-border: #fb923c;
-    --red:    #b91c1c;  --red-bg:    #fff1f2; --red-border:    #fca5a5;
-    --new-bg: #f0fdf4;  --new-border: #86efac; --new-text: #166534;
-    --cont-bg: #f8fafc; --cont-border: #cbd5e1; --cont-text: #475569;
+    --ink: #1a1a1a;
+    --ink-2: #333333;
+    --border: #cccccc;
+    --muted: #5c5c5c;
+    --rule: #1a1a1a;
+    --link: #284162;
+    --yellow: #6c5500;  --yellow-bg: #fff8dc; --yellow-border: #c6a700;
+    --orange: #8a3d00;  --orange-bg: #fdebd9; --orange-border: #d97e2c;
+    --red:    #aa1414;  --red-bg:    #fbe2e2; --red-border:    #d44545;
+    --new-bg: #e6f1e6;  --new-border: #5a9a5a; --new-text: #2c5e2c;
+    --cont-bg: #eeeeee; --cont-border: #b8b8b8; --cont-text: #444444;
+    --accent: #284162;
   }
 
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
-  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+  body { background: var(--bg); color: var(--ink); font-family: Arial, Helvetica, sans-serif; min-height: 100vh; font-size: 16px; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
+  a { color: var(--link); text-decoration: underline; }
+  a:hover { text-decoration: none; }
+
+  /* ── Top accent bar: reflects today's highest active alert level ── */
+  .accent-bar {
+    height: 4px; width: 100%;
+    background: var(--cont-border);
+  }
+  .accent-bar.level-yellow { background: var(--yellow-border); }
+  .accent-bar.level-orange { background: var(--orange-border); }
+  .accent-bar.level-red    { background: var(--red-border); }
 
   /* ── Header ── */
   header {
-    border-bottom: 2px solid var(--text);
-    padding-bottom: 18px; margin-bottom: 28px;
+    border-bottom: 2px solid var(--rule);
+    padding: 20px 0 14px; margin-bottom: 22px;
     display: flex; justify-content: space-between; align-items: flex-end;
     gap: 16px; flex-wrap: wrap;
   }
   .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-text h1 { font-size: 1.6rem; font-weight: 500; letter-spacing: -0.01em; }
-  .logo-text p { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-top: 4px; letter-spacing: 0.04em; }
+  .logo-text h1 { font-size: 1.5rem; font-weight: bold; color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
+  .logo-text p { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
   .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
   /* ── Buttons ── */
   button {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
-    letter-spacing: 0.03em; cursor: pointer;
-    border: 1.5px solid var(--text); padding: 7px 14px;
-    transition: all 0.15s; background: none; color: var(--text);
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; font-weight: normal;
+    cursor: pointer;
+    border: 1px solid var(--muted); border-radius: 0; padding: 7px 16px;
+    transition: all 0.1s; background: #f1f1f1; color: var(--ink);
     display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   }
-  button:hover { background: var(--text); color: var(--bg); }
-  button.primary { background: var(--text); color: var(--bg); }
-  button.primary:hover { opacity: 0.75; }
-  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button:hover { background: #e2e2e2; border-color: var(--ink); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover { background: #1c2e46; border-color: #1c2e46; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
   #refreshBtn.spinning svg { animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── Status row ── */
-  .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; }
-  .date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
-  .source-tag { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 2px 8px; border: 1px solid; display: none; }
-  .source-tag.archived { color: #166534; background: #f0fdf4; border-color: #86efac; }
-  .source-tag.live     { color: #1e40af; background: #eff6ff; border-color: #93c5fd; }
+  .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .date-label { font-size: 0.88rem; color: var(--ink-2); font-weight: bold; }
+  .source-tag { font-size: 0.78rem; padding: 2px 8px; border: 1px solid; display: none; }
+  .source-tag.archived { color: var(--new-text); background: var(--new-bg); border-color: var(--new-border); }
+  .source-tag.live     { color: var(--link); background: #eef1f5; border-color: #9fb3c8; }
 
   /* ── Notices ── */
-  .notice { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; padding: 10px 14px; margin-bottom: 14px; border: 1px solid; display: none; line-height: 1.6; }
-  .notice.warn  { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
-  .notice.error { background: #fff5f5; border-color: #fca5a5; color: #991b1b; white-space: pre-wrap; }
+  .notice { font-size: 0.85rem; padding: 10px 14px; margin-bottom: 14px; border: 1px solid; display: none; line-height: 1.6; }
+  .notice.warn  { background: var(--yellow-bg); border-color: var(--yellow-border); color: var(--yellow); }
+  .notice.error { background: var(--red-bg); border-color: var(--red-border); color: var(--red); white-space: pre-wrap; }
 
   /* ── State message ── */
-  .state-msg { padding: 56px 20px; text-align: center; border: 1.5px dashed var(--border); color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.04em; }
-  .state-msg .icon { font-size: 1.8rem; display: block; margin-bottom: 10px; }
+  .state-msg { padding: 48px 20px; text-align: center; border: 1px solid var(--border); color: var(--muted); font-size: 0.9rem; }
+  .state-msg .icon { font-size: 1.6rem; display: block; margin-bottom: 10px; }
 
   /* ── Table ── */
-  .table-wrap { overflow-x: auto; border: 1.5px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  thead { background: var(--text); color: var(--bg); }
-  thead th { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 11px 14px; text-align: left; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead { background: #e8e8e8; color: var(--ink); }
+  thead th { font-size: 0.8rem; font-weight: bold; padding: 10px 14px; text-align: left; white-space: nowrap; border-bottom: 2px solid var(--ink); }
   tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: #faf5ef; }
-  td { padding: 14px 14px; vertical-align: top; line-height: 1.5; }
+  tbody tr:nth-child(even) { background: #f7f7f7; }
+  tbody tr:hover { background: #eef1f5; }
+  td { padding: 12px 14px; vertical-align: top; line-height: 1.5; }
 
   /* Colour pill */
   .colour-pill {
     display: inline-flex; align-items: center; gap: 5px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 500;
+
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.72rem; font-weight: 500;
     padding: 3px 9px; border: 1px solid; border-radius: 2px; white-space: nowrap; text-transform: capitalize;
   }
   .colour-pill .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
@@ -96,45 +111,46 @@
   /* Status pill */
   .status-pill {
     display: inline-flex; align-items: center; gap: 4px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500;
-    padding: 2px 7px; border: 1px solid; border-radius: 2px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.06em;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem; font-weight: 500;
+    padding: 2px 7px; border: 1px solid; border-radius: 2px; white-space: nowrap; text-transform: uppercase; 
   }
   .status-new  { color: var(--new-text);  background: var(--new-bg);  border-color: var(--new-border); }
   .status-cont { color: var(--cont-text); background: var(--cont-bg); border-color: var(--cont-border); }
 
   td.area { min-width: 160px; max-width: 220px; }
-  td.time-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; color: var(--muted); white-space: normal; min-width: 110px; max-width: 130px; }
+  td.time-cell { font-family: Arial, Helvetica, sans-serif; font-size: 0.76rem; color: var(--muted); white-space: normal; min-width: 110px; max-width: 130px; }
   .time-line { display: block; white-space: nowrap; }
-  td.meta-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; min-width: 130px; }
+  td.meta-cell { font-family: Arial, Helvetica, sans-serif; font-size: 0.76rem; min-width: 130px; }
   .meta-line { margin-bottom: 3px; }
   .meta-line:last-child { margin-bottom: 0; }
   .meta-label { color: var(--muted); }
   td.detail-cell { min-width: 280px; width: 50%; max-width: none; }
-  td.duration-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; white-space: nowrap; min-width: 100px; }
+  td.duration-cell { font-family: Arial, Helvetica, sans-serif; font-size: 0.76rem; white-space: nowrap; min-width: 100px; }
   .duration-val { font-weight: 500; }
   .duration-na { color: var(--muted); }
   .first-issued-sub { display: block; font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
-  .detail-text { font-size: 0.86rem; color: #4a3a30; line-height: 1.6; white-space: pre-wrap; }
+  .detail-text { font-size: 0.86rem; color: var(--ink-2); line-height: 1.6; white-space: pre-wrap; }
 
   /* ── Summary box ── */
   .summary-box {
-    border: 1.5px solid var(--border);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cont-border);
     background: var(--surface);
-    padding: 20px 24px;
+    padding: 18px 22px;
     margin-bottom: 24px;
     display: none;
   }
-  .summary-box.has-alerts { border-color: #f59e0b; background: #fffdf7; }
+  .summary-box.has-alerts { border-left-color: var(--accent); }
   .summary-top {
     display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
   }
   .summary-total {
-    font-size: 1.9rem; font-weight: 300; line-height: 1; letter-spacing: -0.02em; color: var(--text);
+    font-size: 1.9rem; font-weight: 300; line-height: 1; letter-spacing: -0.02em; color: var(--ink);
   }
   .summary-total span { font-size: 1.1rem; font-weight: 400; color: var(--muted); margin-left: 6px; }
   .summary-pills { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .summary-pill {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 500;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; font-weight: 500;
     padding: 5px 14px; border: 1px solid; border-radius: 2px; white-space: nowrap;
   }
   .summary-pill.new  { color: var(--new-text);  background: var(--new-bg);  border-color: var(--new-border); }
@@ -144,33 +160,33 @@
     display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
   }
   .summary-prov-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--muted); margin-right: 4px;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.82rem; color: var(--muted); margin-right: 4px;
   }
   .prov-tag {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem;
-    background: #f5ede3; color: #7a4a20; border: 1px solid #e8d0b8;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem;
+    background: #eceff2; color: var(--ink-2); border: 1px solid var(--border);
     padding: 4px 12px; border-radius: 2px; white-space: nowrap;
   }
-  .summary-none { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+  .summary-none { font-family: Arial, Helvetica, sans-serif; font-size: 0.8rem; color: var(--muted); }
 
   /* ── Air quality pill ── */
   .aq-pill {
     display: inline-flex; align-items: center; gap: 5px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; font-weight: 500;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.65rem; font-weight: 500;
     padding: 3px 8px; border: 1px solid; border-radius: 2px; white-space: nowrap; text-transform: capitalize;
   }
   .aq-pill .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-  .aq-yellow { color: #b45309; background: #fffbeb; border-color: #fcd34d; }
-  .aq-yellow .dot { background: #f59e0b; }
-  .aq-orange { color: #c2410c; background: #fff7ed; border-color: #fb923c; }
-  .aq-orange .dot { background: #f97316; }
-  .aq-red    { color: #b91c1c; background: #fff1f2; border-color: #fca5a5; }
-  .aq-red .dot    { background: #ef4444; }
-  .aq-default { color: #475569; background: #f8fafc; border-color: #cbd5e1; }
+  .aq-yellow { color: var(--yellow); background: var(--yellow-bg); border-color: var(--yellow-border); }
+  .aq-yellow .dot { background: #c99a2e; }
+  .aq-orange { color: var(--orange); background: var(--orange-bg); border-color: var(--orange-border); }
+  .aq-orange .dot { background: #c97a3e; }
+  .aq-red    { color: var(--red);    background: var(--red-bg);    border-color: var(--red-border); }
+  .aq-red .dot    { background: #c95a5a; }
+  .aq-default { color: var(--cont-text); background: var(--cont-bg); border-color: var(--cont-border); }
   .aq-default .dot { background: #94a3b8; }
   td.aq-cell { min-width: 140px; vertical-align: top; }
-  .aq-none { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
-  .aq-type { font-size: 0.76rem; color: #4a3a30; margin-top: 4px; display: block; }
+  .aq-none { font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem; color: var(--muted); }
+  .aq-type { font-size: 0.76rem; color: var(--ink-2); margin-top: 4px; display: block; }
 
   /* ── Summary layout ── */
   .summary-body {
@@ -181,34 +197,35 @@
   /* ── Download panel (bottom) ── */
   .download-section {
     margin-top: 32px;
-    border: 1.5px solid #f59e0b;
-    background: #fffdf7;
-    padding: 20px 24px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 18px 22px;
     display: none;
   }
-  .download-section h2 { font-size: 1.1rem; font-weight: 500; margin-bottom: 16px; }
+  .download-section h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 16px; color: var(--ink); }
   .download-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .download-row label { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+  .download-row label { font-family: Arial, Helvetica, sans-serif; font-size: 0.8rem; color: var(--muted); }
   input[type="date"] {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
-    border: 1.5px solid var(--border); padding: 6px 10px;
-    background: var(--surface); color: var(--text); outline: none; transition: border-color 0.15s;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem;
+    border: 1px solid var(--border); border-radius: 3px; padding: 6px 10px;
+    background: var(--surface); color: var(--ink); outline: none; transition: border-color 0.15s;
   }
-  input[type="date"]:focus { border-color: var(--text); }
-  .archive-count { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--muted); margin-left: 4px; }
+  input[type="date"]:focus { border-color: var(--accent); }
+  .archive-count { font-family: Arial, Helvetica, sans-serif; font-size: 0.65rem; color: var(--muted); margin-left: 4px; }
 
   /* ── Tabs ── */
   .tabs {
     display: flex;
     gap: 0;
-    border-bottom: 2px solid var(--text);
+    border-bottom: 2px solid var(--ink);
     margin-bottom: 24px;
   }
   .tab-btn {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: Arial, Helvetica, sans-serif;
     font-size: 0.78rem;
     font-weight: 500;
-    letter-spacing: 0.04em;
+    
     padding: 10px 22px;
     border: none;
     border-bottom: 3px solid transparent;
@@ -218,28 +235,28 @@
     margin-bottom: -2px;
     transition: all 0.15s;
   }
-  .tab-btn:hover { color: var(--text); background: none; }
-  .tab-btn.active { color: var(--text); border-bottom-color: var(--text); background: none; }
+  .tab-btn:hover { color: var(--ink); background: none; }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--ink); background: none; }
 
   /* ── Previous alerts table ── */
   .prev-table-wrap { overflow-x: auto; border: 1.5px solid var(--border); }
   .prev-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-  .prev-table-wrap thead { background: var(--text); color: var(--bg); }
+  .prev-table-wrap thead { background: var(--ink); color: var(--bg); }
   .prev-table-wrap thead th {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; font-weight: 500;
-    letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.65rem; font-weight: 500;
+     text-transform: uppercase;
     padding: 10px 14px; text-align: left; white-space: nowrap;
   }
   .prev-table-wrap tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
   .prev-table-wrap tbody tr:last-child { border-bottom: none; }
   .prev-table-wrap tbody tr:hover { background: #faf5ef; }
   .prev-table-wrap td { padding: 11px 14px; vertical-align: middle; line-height: 1.4; }
-  .prev-table-wrap td.mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+  .prev-table-wrap td.mono { font-family: Arial, Helvetica, sans-serif; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
   .prev-table-wrap td.community-cell { min-width: 160px; max-width: 220px; font-size: 0.85rem; }
-  .prev-table-wrap td.community-cell .pt { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--muted); }
+  .prev-table-wrap td.community-cell .pt { font-family: Arial, Helvetica, sans-serif; font-size: 0.68rem; color: var(--muted); }
   .active-badge {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; font-weight: 500;
-    letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.6rem; font-weight: 500;
+     text-transform: uppercase;
     background: #f0fdf4; color: #166534; border: 1px solid #86efac;
     padding: 2px 7px; border-radius: 2px; white-space: nowrap; margin-left: 6px;
   }
@@ -253,23 +270,23 @@
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   }
   .density-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
-    color: var(--muted); letter-spacing: 0.05em; margin-right: 4px;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem;
+    color: var(--muted);  margin-right: 4px;
   }
   .period-btn {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem;
     padding: 6px 14px; border: 1.5px solid var(--border);
     background: none; color: var(--muted); cursor: pointer;
-    transition: all 0.15s; letter-spacing: 0.03em;
+    transition: all 0.15s; 
   }
-  .period-btn:hover { border-color: var(--text); color: var(--text); background: none; }
-  .period-btn.active { border-color: var(--text); color: var(--text); background: var(--text); color: var(--bg); }
+  .period-btn:hover { border-color: var(--ink); color: var(--ink); background: none; }
+  .period-btn.active { border-color: var(--ink); color: var(--ink); background: var(--ink); color: var(--bg); }
   .density-custom {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   }
-  .density-custom label { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .density-custom label { font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem; color: var(--muted); }
   .density-wrap {
-  display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
+    display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
   }
   .density-map-wrap { flex: 1 1 680px; min-width: 320px; }
   .density-map { width: 100%; height: auto; display: block; }
@@ -279,34 +296,34 @@
   }
   .density-map .pt-shape:hover { stroke: #7a4a20; stroke-width: 1.5; }
   .density-map .pt-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 7px;
+    font-family: Arial, Helvetica, sans-serif; font-size: 7px;
     text-anchor: middle; pointer-events: none; font-weight: 500;
     fill: #7a6a5a;
   }
   .density-sidebar { flex: 0 0 220px; }
-  .density-legend { margin-bottom: 24px; }
+  .density-legend { margin-top: 20px; }
   .density-legend-title {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem;
-    color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem;
+    color: var(--muted);  text-transform: uppercase;
     margin-bottom: 10px;
   }
   .legend-row {
     display: flex; align-items: center; gap: 10px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
-    color: var(--text); margin-bottom: 6px;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.72rem;
+    color: var(--ink); margin-bottom: 6px;
   }
   .legend-swatch {
     width: 20px; height: 14px; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;
   }
   .density-table { width: 100%; border-collapse: collapse; }
   .density-table th {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
-    font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--text);
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.62rem;
+    font-weight: 500;  text-transform: uppercase;
+    padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--ink);
     white-space: nowrap;
   }
   .density-table td {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.75rem;
     padding: 7px 10px; border-bottom: 1px solid var(--border);
     vertical-align: middle;
   }
@@ -318,16 +335,17 @@
     vertical-align: middle; border-radius: 2px;
   }
   .density-period-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+    font-family: Arial, Helvetica, sans-serif; font-size: 0.68rem;
     color: var(--muted); margin-bottom: 16px;
   }
 
   /* ── Footer ── */
-  footer { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--muted); line-height: 2; }
+  footer { margin-top: 36px; padding: 16px 18px; border: 1px solid var(--border); background: #f7f7f7; font-family: Arial, Helvetica, sans-serif; font-size: 0.8rem; color: var(--muted); line-height: 1.8; }
   footer a { color: var(--muted); }
 </style>
 </head>
 <body>
+<div class="accent-bar" id="accentBar"></div>
 <div class="page">
 
   <header>
@@ -411,7 +429,7 @@
       </div>
     </div>
 
-     <div id="density-main">
+    <div id="density-main">
       <div class="density-wrap">
         <div class="density-map-wrap">
           <p class="density-period-label" id="density-period">—</p>
@@ -423,7 +441,7 @@
           <table class="density-table">
             <thead><tr><th>PT</th><th>Alert-days</th></tr></thead>
             <tbody id="density-table-body">
-              <tr><td colspan="2" style="color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:0.72rem">Select a period above</td></tr>
+              <tr><td colspan="2" style="color:var(--muted);font-family:Arial,sans-serif;font-size:0.72rem">Select a period above</td></tr>
             </tbody>
           </table>
           <div class="density-legend">
@@ -439,7 +457,7 @@
       </div>
     </div>
   </div>
- 
+
   <!-- Download section at bottom -->
   <div class="download-section" id="downloadSection">
     <h2>Download CSV Archive</h2>
@@ -457,23 +475,23 @@
       <span class="archive-count" id="archiveCount"></span>
     </div>
   </div>
- 
+
   <footer>
     Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
     Archived daily by GitHub Actions · Falls back to live GeoMet API if archive unavailable<br>
     Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory &nbsp;·&nbsp; AQ = Air Quality<br>
     * Earliest date recorded in archive — may not reflect the original issue date
   </footer>
- 
+
 </div>
 <script>
   let todayAlerts   = [];
   let archiveAlerts = [];
   let usingArchive  = false;
- 
+
   const HEAT_PATTERN = /heat|humidex|canicule|chaleur/i;
   const AQ_PATTERN   = /air quality|smog|qualité de l.air/i;
- 
+
   let aqAlerts = [];  // live air quality alerts, keyed by feature_id
   const COLOUR_ORDER = { red: 0, orange: 1, yellow: 2 };
   const STOP_PHRASES = [
@@ -482,9 +500,9 @@
     "Plan and schedule", "Extreme heat affects", "Never leave people",
     "For more information", "Please continue to monitor",
   ];
- 
+
   function stripHtml(s) { return (s || '').replace(/<[^>]+>/g, '').trim(); }
- 
+
   function extractDetail(text) {
     let out = (text || '').trim();
     for (const p of STOP_PHRASES) {
@@ -493,7 +511,7 @@
     }
     return out.replace(/\n{3,}/g, '\n\n').trim();
   }
- 
+
   // Format validity_datetime with time on line 1, date on line 2
   function fmtValidityTime(s) {
     if (!s) return '<span class="time-line">—</span>';
@@ -509,14 +527,14 @@
       return `<span class="time-line">${esc(time)}</span><span class="time-line" style="margin-top:2px">${esc(weekday + ' ' + day + ' ' + month + ' ' + year)}</span>`;
     } catch { return `<span class="time-line">${esc(s)}</span>`; }
   }
- 
+
   // archiveHasPriorDay: true once data.json has entries from before today.
   let archiveHasPriorDay = false;
- 
+
   // Build a lookup: feature_id → earliest date seen in archive (any status).
   // Used for "Active For" (days) and "First Issued" (date label).
   let firstSeenLookup = {};
- 
+
   function buildFirstIssuedLookup() {
     firstSeenLookup = {};
     for (const a of archiveAlerts) {
@@ -527,7 +545,7 @@
       }
     }
   }
- 
+
   // "Active For": calendar days from the earliest archived date for this feature to today.
   // Only shown for continued alerts when archive has a prior day.
   function activeDuration(alert) {
@@ -544,7 +562,7 @@
       return `${days} day${days !== 1 ? 's' : ''}`;
     } catch { return null; }
   }
- 
+
   // "First Issued": earliest date seen in archive for this feature.
   // Only shown for continued alerts when archive has a prior day.
   function firstIssuedDate(alert) {
@@ -558,9 +576,9 @@
       return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch { return date; }
   }
- 
+
   function todayISO() { return new Date().toLocaleDateString('en-CA'); }
- 
+
   function sortAlerts(arr) {
     return [...arr].sort((a, b) => {
       const oa = COLOUR_ORDER[(a.colour || '').toLowerCase()] ?? 9;
@@ -568,19 +586,19 @@
       return oa !== ob ? oa - ob : (a.province || '').localeCompare(b.province || '');
     });
   }
- 
+
   function colourPill(colour) {
     const c = (colour || '').toLowerCase().trim();
     const cls = c === 'red' ? 'pill-red' : c === 'orange' ? 'pill-orange' : c === 'yellow' ? 'pill-yellow' : 'pill-default';
     return `<span class="colour-pill ${cls}"><span class="dot"></span>${esc(colour || 'unknown')}</span>`;
   }
- 
+
   function aqPill(colour, alertType) {
     const c = (colour || '').toLowerCase().trim();
     const cls = c === 'red' ? 'aq-red' : c === 'orange' ? 'aq-orange' : c === 'yellow' ? 'aq-yellow' : 'aq-default';
     return `<span class="aq-pill ${cls}"><span class="dot"></span>${esc(colour || '?')}</span>`;
   }
- 
+
   function statusPill(status) {
     const s = (status || '').toLowerCase();
     if (s === 'issued') {
@@ -588,27 +606,27 @@
     }
     return `<span class="status-pill status-cont">Continued</span>`;
   }
- 
+
   function esc(s) {
     return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
- 
+
   // ── Data loading ─────────────────────────────────────────────────────────────
   // Strategy:
   //   1. Always fetch today live from GeoMet (most up-to-date effective times)
   //   2. In parallel, load data.json for the historical archive (date-range download)
   //   3. If GeoMet fails, fall back to today's slice from data.json
   //   4. If both fail, show an error
- 
+
   async function init() {
     setRefreshSpinning(true);
     hideError(); hideFallbackNotice();
- 
+
     const [liveResult, archiveResult] = await Promise.allSettled([
       loadLive(),
       tryLoadArchive(),
     ]);
- 
+
     if (liveResult.status === 'fulfilled') {
       // Live succeeded — show archive download if available
       if (archiveResult.status === 'fulfilled' && archiveResult.value) {
@@ -630,10 +648,10 @@
           '<div class="state-msg"><span class="icon">⚠️</span>Failed to load data. See error above.</div>';
       }
     }
- 
+
     setRefreshSpinning(false);
   }
- 
+
   async function tryLoadArchive() {
     try {
       const res = await fetch('data.json?nocache=' + Date.now());
@@ -653,16 +671,16 @@
       return false;
     }
   }
- 
+
   async function loadLive() {
     document.getElementById('main').innerHTML =
       '<div class="state-msg"><span class="icon">⏳</span>Fetching live heat alerts from GeoMet…</div>';
- 
+
     const res = await fetch('https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const today = todayISO();
- 
+
     todayAlerts = sortAlerts(
       (data.features || [])
         .map(f => {
@@ -687,7 +705,7 @@
         })
         .filter(a => HEAT_PATTERN.test(a.alert_type))
     );
- 
+
     // Build AQ lookup: feature_id → highest-severity AQ alert
     const COLOUR_RANK = { red: 3, orange: 2, yellow: 1 };
     const aqMap = {};
@@ -705,18 +723,19 @@
       }
     }
     aqAlerts = aqMap;
- 
+
     setSourceTag('live', '🔴 Live — GeoMet API');
     setDateLabel(today);
     renderTable(todayAlerts);
     if (currentTab === 'previous') renderPreviousAlerts();
     // Note: archive download section is set up by init() after this resolves
   }
- 
+
   // ── Summary box ──────────────────────────────────────────────────────────────
   function renderSummary(alerts) {
     const box = document.getElementById('summaryBox');
- 
+    const accentBar = document.getElementById('accentBar');
+
     if (alerts.length === 0) {
       box.className = 'summary-box';
       box.style.display = 'block';
@@ -724,12 +743,20 @@
       document.getElementById('summaryPills').innerHTML = '';
       document.getElementById('summaryProvinces').innerHTML =
         '<span class="summary-none">No active heat alerts in Canada right now.</span>';
+      if (accentBar) accentBar.className = 'accent-bar';
       return;
     }
- 
+
     const newCount  = alerts.filter(a => (a.status || '').toLowerCase() === 'issued').length;
     const contCount = alerts.filter(a => (a.status || '').toLowerCase() === 'continued').length;
- 
+
+    // Top accent bar reflects the day's highest active alert level
+    const hasRed    = alerts.some(a => (a.colour || '').toLowerCase() === 'red');
+    const hasOrange = alerts.some(a => (a.colour || '').toLowerCase() === 'orange');
+    if (accentBar) {
+      accentBar.className = 'accent-bar ' + (hasRed ? 'level-red' : hasOrange ? 'level-orange' : 'level-yellow');
+    }
+
     // Unique provinces, sorted
     const PROV_ORDER = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
     const provinces = [...new Set(alerts.map(a => a.province).filter(Boolean))];
@@ -741,24 +768,24 @@
       if (ib === -1) return -1;
       return ia - ib;
     });
- 
+
     box.className = 'summary-box has-alerts';
     box.style.display = 'block';
- 
+
     document.getElementById('summaryTotal').innerHTML =
       `${alerts.length}<span>active heat alert${alerts.length !== 1 ? 's' : ''}</span>`;
- 
+
     const pills = [];
     if (newCount  > 0) pills.push(`<span class="summary-pill new">★ ${newCount} new</span>`);
     if (contCount > 0) pills.push(`<span class="summary-pill cont">${contCount} continued</span>`);
     document.getElementById('summaryPills').innerHTML = pills.join('');
- 
+
     const provTags = provinces.map(p => `<span class="prov-tag">${esc(p)}</span>`).join('');
     document.getElementById('summaryProvinces').innerHTML =
       `<span class="summary-prov-label">PT affected:</span>${provTags}`;
- 
+
   }
- 
+
   // ── Render table ─────────────────────────────────────────────────────────────
   function renderTable(alerts) {
     renderSummary(alerts);
@@ -767,19 +794,19 @@
       container.innerHTML = '<div class="state-msg"><span class="icon">✅</span>No active heat alerts for this date.</div>';
       return;
     }
- 
+
     const rows = alerts.map(a => {
       const dur     = activeDuration(a);
       const firstDt = firstIssuedDate(a);
       const durCell = dur
         ? `<span class="duration-val">${esc(dur)}</span>`
         : `<span class="duration-na">—</span>`;
- 
+
       return `
       <tr>
         <td>${colourPill(a.colour)}</td>
         <td class="area">${esc(a.community)}<br>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.74rem;color:var(--muted)">${esc(a.province)}</span>
+          <span style="font-family:Arial,sans-serif;font-size:0.74rem;color:var(--muted)">${esc(a.province)}</span>
         </td>
         <td class="time-cell">${fmtValidityTime(a.validity_datetime || a.issued)}</td>
         <td class="duration-cell">${durCell}${firstDt ? `<span class="first-issued-sub">(${esc(firstDt)})*</span>` : ''}</td>
@@ -795,7 +822,7 @@
         <td class="detail-cell"><div class="detail-text">${esc(a.detail || a.alert_text || '')}</div></td>
       </tr>`;
     }).join('');
- 
+
     container.innerHTML = `
       <div class="table-wrap">
         <table>
@@ -812,39 +839,39 @@
         </table>
       </div>`;
   }
- 
+
   // ── Download section ──────────────────────────────────────────────────────────
   function setupDownloadSection(all) {
     const dates = [...new Set(all.map(a => a.date))].sort();
     if (dates.length === 0) { hideDownloadSection(); return; }
- 
+
     const section = document.getElementById('downloadSection');
     section.style.display = 'block';
- 
+
     const fromEl = document.getElementById('dateFrom');
     const toEl   = document.getElementById('dateTo');
     fromEl.min = toEl.min = dates[0];
     fromEl.max = toEl.max = dates[dates.length - 1];
     fromEl.value = dates[0];
     toEl.value   = dates[dates.length - 1];
- 
+
     const unique = dates.length;
     document.getElementById('archiveCount').textContent =
       `${unique} day${unique !== 1 ? 's' : ''} archived · ${all.length} records`;
   }
- 
+
   function hideDownloadSection() {
     document.getElementById('downloadSection').style.display = 'none';
   }
- 
+
   function downloadRangeCSV() {
     const from = document.getElementById('dateFrom').value;
     const to   = document.getElementById('dateTo').value;
     if (!from || !to) return;
- 
+
     const rows = archiveAlerts.filter(a => a.date >= from && a.date <= to);
     if (rows.length === 0) { alert('No alerts found in that date range.'); return; }
- 
+
     const fields = ['date','colour','community','province','status','validity_datetime','issued','expires','impact','confidence','alert_text'];
     const csvEsc = v => {
       const s = String(v ?? '').replace(/"/g, '""');
@@ -857,10 +884,10 @@
     a.href = url; a.download = `heat_alerts_${from}_to_${to}.csv`; a.click();
     URL.revokeObjectURL(url);
   }
- 
+
   // ── Tab switching ────────────────────────────────────────────────────────────────
   let currentTab = 'today';
- 
+
   function switchTab(tab) {
     currentTab = tab;
     document.getElementById('panel-today').style.display    = tab === 'today'    ? '' : 'none';
@@ -874,19 +901,19 @@
     if (tab === 'previous') renderPreviousAlerts();
     if (tab === 'density')  renderDensity();
   }
- 
+
   // ── Previous alerts ───────────────────────────────────────────────────────────
   function renderPreviousAlerts() {
     const container = document.getElementById('prev-main');
- 
+
     if (archiveAlerts.length === 0) {
       container.innerHTML =
         '<div class="state-msg"><span class="icon">📦</span>No archived data yet — previous alerts will appear here once the daily archive has been running for at least one day.</div>';
       return;
     }
- 
+
     const today = todayISO();
- 
+
     // Group by feature_id (or community|province fallback)
     const groups = {};
     for (const a of archiveAlerts) {
@@ -915,10 +942,10 @@
         groups[key].colour = a.colour;
       }
     }
- 
+
     // Mark which feature_ids are active today
     const todayFids = new Set(todayAlerts.map(a => a.feature_id || (a.community + '|' + a.province)));
- 
+
     const rows = Object.values(groups).map(g => {
       g.dates = [...new Set(g.dates)].sort();
       g.firstDate = g.dates[0];
@@ -926,19 +953,19 @@
       g.isActive  = todayFids.has(g.key) || g.lastDate === today;
       return g;
     });
- 
+
     // Sort: active first, then most recent, then community
     rows.sort((a, b) => {
       if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
       if (b.lastDate !== a.lastDate) return b.lastDate.localeCompare(a.lastDate);
       return a.community.localeCompare(b.community);
     });
- 
+
     if (rows.length === 0) {
       container.innerHTML = '<div class="state-msg"><span class="icon">📭</span>No previous alerts in archive.</div>';
       return;
     }
- 
+
     const tableRows = rows.map(g => {
       const dateRange = g.firstDate === g.lastDate
         ? fmtDateShort(g.firstDate)
@@ -956,7 +983,7 @@
           <td class="aq-cell">${aqCell}</td>
         </tr>`;
     }).join('');
- 
+
     container.innerHTML = `
       <div class="prev-table-wrap">
         <table>
@@ -971,7 +998,7 @@
         </table>
       </div>`;
   }
- 
+
   function fmtDateShort(dateStr) {
     if (!dateStr) return '—';
     try {
@@ -979,20 +1006,20 @@
       return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch { return dateStr; }
   }
- 
- 
+
+
   // ── Density map ──────────────────────────────────────────────────────────────
   let currentPeriod = 'summer2026';
   let topoLoaded    = false;
   let topoData      = null;
- 
+
   // PRUID → two-letter PT code (Stats Can numeric codes)
   const PRUID_TO_PT = {
     '10': 'NL', '11': 'PE', '12': 'NS', '13': 'NB',
     '24': 'QC', '35': 'ON', '46': 'MB', '47': 'SK',
     '48': 'AB', '59': 'BC', '60': 'YT', '61': 'NT', '62': 'NU'
   };
- 
+
   function densityColour(days) {
     if (!days || days === 0) return '#f0e8df';
     if (days <= 2)  return '#fef3c7';
@@ -1001,7 +1028,7 @@
     if (days <= 20) return '#f97316';
     return '#dc2626';
   }
- 
+
   function getPeriodDates(period) {
     const today = todayISO();
     if (period === 'summer2026') return { from: '2026-06-01', to: '2026-08-31' };
@@ -1018,7 +1045,7 @@
     }
     return { from: '2026-06-01', to: today };
   }
- 
+
   function setPeriod(period, btn) {
     currentPeriod = period;
     document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
@@ -1026,7 +1053,7 @@
     document.getElementById('densityCustom').style.display = period === 'custom' ? 'flex' : 'none';
     if (period !== 'custom') renderDensity();
   }
- 
+
   async function loadTopoIfNeeded() {
     if (topoLoaded) return true;
     try {
@@ -1040,16 +1067,16 @@
       return false;
     }
   }
- 
+
   async function renderDensity() {
     if (archiveAlerts.length === 0) {
       document.getElementById('density-map-container').innerHTML =
         '<div class="state-msg"><span class="icon">📦</span>No archived data yet — density map will populate as the daily archive builds.</div>';
       return;
     }
- 
+
     const { from, to } = getPeriodDates(currentPeriod);
- 
+
     // Count unique alert-days per PT
     const ptDays = {};
     const seen   = new Set();
@@ -1061,12 +1088,12 @@
         ptDays[a.province] = (ptDays[a.province] || 0) + 1;
       }
     }
- 
+
     // Period label
     const toDisplay = to > todayISO() ? todayISO() : to;
     document.getElementById('density-period').textContent =
       fmtDateShort(from) + ' – ' + fmtDateShort(toDisplay);
- 
+
     // Sidebar table
     const ALL_PTS = ['BC','AB','SK','MB','ON','QC','NB','NS','PE','NL','YT','NT','NU'];
     const tableRows = ALL_PTS
@@ -1075,37 +1102,37 @@
       .map(pt => '<tr><td><span class="pt-swatch" style="background:' + densityColour(ptDays[pt]) + '"></span>' + pt + '</td><td>' + ptDays[pt] + ' day' + (ptDays[pt] !== 1 ? 's' : '') + '</td></tr>')
       .join('');
     document.getElementById('density-table-body').innerHTML = tableRows ||
-      '<tr><td colspan="2" style="color:var(--muted);font-family:IBM Plex Mono,monospace;font-size:0.72rem">No heat warnings in this period</td></tr>';
- 
+      '<tr><td colspan="2" style="color:var(--muted);font-family:Arial,sans-serif;font-size:0.72rem">No heat warnings in this period</td></tr>';
+
     // Load TopoJSON and draw map with D3
     const ok = await loadTopoIfNeeded();
     const container = document.getElementById('density-map-container');
- 
+
     if (!ok || !topoData) {
       container.innerHTML =
         '<div class="state-msg"><span class="icon">⚠️</span>Could not load canada-provinces.json — make sure it is committed to your repo root.</div>';
       return;
     }
- 
+
     container.innerHTML = '';
     const width  = container.offsetWidth || 700;
     const height = Math.round(width * 0.62);
- 
+
     const svg = d3.select(container).append('svg')
       .attr('viewBox', '0 0 ' + width + ' ' + height)
       .style('width', '100%')
       .style('display', 'block');
- 
+
     const objKey   = Object.keys(topoData.objects)[0];
     const features = topojson.feature(topoData, topoData.objects[objKey]).features;
- 
+
     const projection = d3.geoConicConformal()
       .parallels([49, 77])
       .rotate([96, -60])
       .fitSize([width, height], { type: 'FeatureCollection', features });
- 
+
     const path = d3.geoPath(projection);
- 
+
     svg.selectAll('path.province')
       .data(features)
       .join('path')
@@ -1120,7 +1147,7 @@
         const days = ptDays[pt] || 0;
         return (d.properties.PRENAME || pt) + ': ' + days + ' alert-day' + (days !== 1 ? 's' : '');
       });
- 
+
     svg.selectAll('text.pt-lbl')
       .data(features)
       .join('text')
@@ -1131,14 +1158,14 @@
       })
       .attr('text-anchor', 'middle')
       .attr('dy', '0.35em')
-      .style('font-family', 'IBM Plex Mono, monospace')
+      .style('font-family', 'Arial, sans-serif')
       .style('font-size', Math.max(8, Math.round(width / 75)) + 'px')
       .style('fill', '#5a4a3a')
       .style('pointer-events', 'none')
       .text(d => PRUID_TO_PT[d.properties.PRUID] || '');
   }
- 
- 
+
+
   // ── UI helpers ────────────────────────────────────────────────────────────────
   function setRefreshSpinning(on) {
     const btn = document.getElementById('refreshBtn');
@@ -1162,11 +1189,10 @@
   function hideFallbackNotice() { document.getElementById('fallbackNotice').style.display = 'none'; }
   function showError(msg) { const el = document.getElementById('errorBanner'); el.textContent = '⚠ ' + msg; el.style.display = 'block'; }
   function hideError() { document.getElementById('errorBanner').style.display = 'none'; }
- 
+
   init();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 </body>
 </html>
- 
