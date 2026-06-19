@@ -400,14 +400,14 @@
     </div>
 
     <div id="main">
-      <div class="state-msg"><span class="icon">⏳</span>Loading heat alerts…</div>
+      <div class="state-msg"><span class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5c5c5c" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Loading heat alerts…</div>
     </div>
 
   </div>
 
   <div id="panel-previous" style="display:none">
     <div id="prev-main">
-      <div class="state-msg"><span class="icon">⏳</span>Loading previous alerts…</div>
+      <div class="state-msg"><span class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5c5c5c" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Loading previous alerts…</div>
     </div>
   </div>
 
@@ -434,7 +434,7 @@
         <div class="density-map-wrap">
           <p class="density-period-label" id="density-period">—</p>
           <div id="density-map-container">
-            <div class="state-msg"><span class="icon">⏳</span>Loading map…</div>
+            <div class="state-msg"><span class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5c5c5c" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Loading map…</div>
           </div>
         </div>
         <div class="density-sidebar">
@@ -645,7 +645,7 @@
       } else {
         showError('Could not load data from GeoMet or from the archive.\n\nIf testing locally with file://, CORS will block the request.\nHost on GitHub Pages or run: python3 -m http.server 8080');
         document.getElementById('main').innerHTML =
-          '<div class="state-msg"><span class="icon">⚠️</span>Failed to load data. See error above.</div>';
+          '<div class="state-msg"><span class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 3 L22 20 L2 20 Z" fill="#fbe2e2" stroke="#aa1414" stroke-width="1.5"/><rect x="11" y="9" width="2" height="6" fill="#aa1414"/><rect x="11" y="16" width="2" height="2" fill="#aa1414"/></svg></span>Failed to load data. See error above.</div>';
       }
     }
 
@@ -674,7 +674,7 @@
 
   async function loadLive() {
     document.getElementById('main').innerHTML =
-      '<div class="state-msg"><span class="icon">⏳</span>Fetching live heat alerts from GeoMet…</div>';
+      '<div class="state-msg"><span class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5c5c5c" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Fetching live heat alerts from GeoMet…</div>';
 
     const res = await fetch('https://api.weather.gc.ca/collections/weather-alerts/items?f=json&limit=1000&lang=en');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -791,7 +791,7 @@
     renderSummary(alerts);
     const container = document.getElementById('main');
     if (alerts.length === 0) {
-      container.innerHTML = '<div class="state-msg"><span class="icon">✅</span>No active heat alerts for this date.</div>';
+      container.innerHTML = '<div class="state-msg"><span class="icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2c5e2c" stroke-width="2"><circle cx="12" cy="12" r="10" fill="#e6f1e6" stroke="#2c5e2c"/><path d="M8 12l3 3 5-6" stroke="#2c5e2c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>No active heat alerts for this date.</div>';
       return;
     }
 
@@ -908,7 +908,7 @@
 
     if (archiveAlerts.length === 0) {
       container.innerHTML =
-        '<div class="state-msg"><span class="icon">📦</span>No archived data yet — previous alerts will appear here once the daily archive has been running for at least one day.</div>';
+        '<div class="state-msg"><span class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5c5c5c" stroke-width="1.6"><rect x="3" y="4" width="18" height="4" stroke-linejoin="round"/><path d="M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8" stroke-linejoin="round"/><line x1="10" y1="12" x2="14" y2="12" stroke-linecap="round"/></svg></span>No archived data yet — previous alerts will appear here once the daily archive has been running for at least one day.</div>';
       return;
     }
 
@@ -962,7 +962,7 @@
     });
 
     if (rows.length === 0) {
-      container.innerHTML = '<div class="state-msg"><span class="icon">📭</span>No previous alerts in archive.</div>';
+      container.innerHTML = '<div class="state-msg"><span class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5c5c5c" stroke-width="1.6"><path d="M4 13l2-8h12l2 8" stroke-linejoin="round"/><path d="M4 13h5a1 1 0 011 1 2 2 0 002 2 2 2 0 002-2 1 1 0 011-1h5v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z" stroke-linejoin="round"/></svg></span>No previous alerts in archive.</div>';
       return;
     }
 
@@ -1071,7 +1071,7 @@
   async function renderDensity() {
     if (archiveAlerts.length === 0) {
       document.getElementById('density-map-container').innerHTML =
-        '<div class="state-msg"><span class="icon">📦</span>No archived data yet — density map will populate as the daily archive builds.</div>';
+        '<div class="state-msg"><span class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5c5c5c" stroke-width="1.6"><rect x="3" y="4" width="18" height="4" stroke-linejoin="round"/><path d="M4 8v11a1 1 0 001 1h14a1 1 0 001-1V8" stroke-linejoin="round"/><line x1="10" y1="12" x2="14" y2="12" stroke-linecap="round"/></svg></span>No archived data yet — density map will populate as the daily archive builds.</div>';
       return;
     }
 
@@ -1110,7 +1110,7 @@
 
     if (!ok || !topoData) {
       container.innerHTML =
-        '<div class="state-msg"><span class="icon">⚠️</span>Could not load canada-provinces.json — make sure it is committed to your repo root.</div>';
+        '<div class="state-msg"><span class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 3 L22 20 L2 20 Z" fill="#fbe2e2" stroke="#aa1414" stroke-width="1.5"/><rect x="11" y="9" width="2" height="6" fill="#aa1414"/><rect x="11" y="16" width="2" height="2" fill="#aa1414"/></svg></span>Could not load canada-provinces.json — make sure it is committed to your repo root.</div>';
       return;
     }
 
