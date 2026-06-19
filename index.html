@@ -351,8 +351,8 @@
   <header>
     <div class="logo">
 <div class="logo-text">
-        <h1>Canada Daily Heat Alerts</h1>
-        <p>Environment &amp; Climate Change Canada · Heat warnings only</p>
+        <h1>Canada Daily Heat Warnings</h1>
+        <p>Today's heat warnings from Environment &amp; Climate Change Canada</p>
       </div>
     </div>
     <div class="header-actions">
@@ -374,7 +374,7 @@
   <div class="tabs">
     <button class="tab-btn active" id="tab-today" onclick="switchTab('today')">Today's Alerts</button>
     <button class="tab-btn" id="tab-previous" onclick="switchTab('previous')">Previous Alerts</button>
-    <button class="tab-btn" id="tab-density" onclick="switchTab('density')">Heat Warning Density</button>
+    <button class="tab-btn" id="tab-density" onclick="switchTab('density')">Map</button>
   </div>
 
   <div id="panel-today">
@@ -477,9 +477,9 @@
   </div>
 
   <footer>
-    Data: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
-    Archived daily by GitHub Actions · Falls back to live GeoMet API if archive unavailable<br>
-    Warning levels: Yellow · Orange · Red &nbsp;·&nbsp; Status: New = first issuance · Continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory &nbsp;·&nbsp; AQ = Air Quality<br>
+    Original data from: <a href="https://api.weather.gc.ca/collections/weather-alerts" target="_blank">api.weather.gc.ca/collections/weather-alerts</a><br>
+    Colour-coded weather alerts: yellow = hazardous weather, moderate impacts · orange = severe weather, major impacts · red = very dangerous weather, extensive impacts</a><br>
+    Status: new = first issuance · continued = ongoing alert &nbsp;·&nbsp; PT = Province / Territory &nbsp;·&nbsp; AQ = air quality<br>
     * Earliest date recorded in archive — may not reflect the original issue date
   </footer>
 
