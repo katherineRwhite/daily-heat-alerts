@@ -635,7 +635,17 @@
     ]);
 
     if (liveResult.status === 'fulfilled') {
-      // Live succeeded — show archive download if available
+      // Live succeeded — merge today's live alerts into archiveAlerts so that
+      // Previous Alerts and the Density map (which both read only from
+      // archiveAlerts, not todayAlerts) include today's data immediately,
+      // rather than waiting for tomorrow's GitHub Action run to write it
+      // into data.json.
+      const today = todayISO();
+      // Remove any stale archive entries for today first (in case data.json
+      // already had a same-day snapshot from an earlier Action run), then
+      // add today's fresh live records.
+      archiveAlerts = archiveAlerts.filter(a => a.date !== today).concat(todayAlerts);
+
       if (archiveResult.status === 'fulfilled' && archiveResult.value) {
         setupDownloadSection(archiveAlerts);
       }
@@ -1346,6 +1356,44 @@
         const days = zoneDays[key] || 0;
         return (zoneNames[key] || d.properties.NAME || key) + ': ' + days + ' alert-day' + (days !== 1 ? 's' : '');
       });
+
+    // Draw province/territory outlines on top of the zones, with no fill
+    // (so the zone shading underneath stays visible) — just a bold border
+    // to show where each PT boundary sits, the same way borders appear on
+    // the province-only view.
+    if (provinceFeatures.length > 0) {
+      svg.selectAll('path.pt-outline')
+        .data(provinceFeatures)
+        .join('path')
+        .attr('class', 'pt-outline')
+        .attr('d', path)
+        .attr('fill', 'none')
+        .attr('stroke', '#3a3028')
+        .attr('stroke-width', 1.1)
+        .style('pointer-events', 'none'); // let hover/tooltips pass through to the zones below
+
+      // Add the PT abbreviation (ON, QC, etc.) at each province's centroid,
+      // same approach as the province-only view's labels.
+      svg.selectAll('text.pt-outline-label')
+        .data(provinceFeatures)
+        .join('text')
+        .attr('class', 'pt-outline-label')
+        .attr('transform', d => {
+          const c = path.centroid(d);
+          return (isNaN(c[0]) ? 'translate(-999,-999)' : 'translate(' + c + ')');
+        })
+        .attr('text-anchor', 'middle')
+        .attr('dy', '0.35em')
+        .style('font-family', 'Arial, sans-serif')
+        .style('font-weight', 'bold')
+        .style('font-size', Math.max(9, Math.round(width / 65)) + 'px')
+        .style('fill', '#1a1a1a')
+        .style('paint-order', 'stroke')
+        .style('stroke', '#fff')
+        .style('stroke-width', '3px')
+        .style('pointer-events', 'none')
+        .text(d => PRUID_TO_PT[d.properties.PRUID] || '');
+    }
   }
 
 
